@@ -12,6 +12,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     user.role === "admin"
       ? [
           { href: "/admin", label: t.nav.dashboard },
+          { href: "/admin/rezervasyonlar", label: t.nav.reservations },
           { href: "/admin/klinikler", label: t.nav.clinics },
           { href: "/admin/oteller", label: t.nav.hotels },
           { href: "/admin/musaitlik", label: t.nav.availability },
