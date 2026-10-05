@@ -16,7 +16,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           { href: "/admin/oteller", label: t.nav.hotels },
           { href: "/admin/musaitlik", label: t.nav.availability },
         ]
-      : [{ href: "/klinik", label: t.nav.dashboard }];
+      : [
+          { href: "/klinik", label: t.nav.dashboard },
+          { href: "/klinik/oteller", label: t.nav.hotels },
+          { href: "/klinik/rezervasyonlar", label: t.nav.reservations },
+        ];
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
