@@ -341,3 +341,19 @@ describe("profil ve şifre", () => {
     }
   });
 });
+
+describe("görsel depolama", () => {
+  it("klinik görselleri okuyabilir ama yükleyemez; admin yükleyebilir", async () => {
+    await db.query("insert into storage.objects (bucket_id, name) values ('hotel-images', 'x/1.webp')");
+    await asUser(db, ids.userA, async () => {
+      const { rowCount } = await db.query("select 1 from storage.objects where bucket_id = 'hotel-images'");
+      expect(rowCount).toBeGreaterThan(0);
+    });
+    await expect(
+      asUser(db, ids.userA, () => db.query("insert into storage.objects (bucket_id, name) values ('hotel-images', 'x/2.webp')")),
+    ).rejects.toThrow(/row-level security/);
+    await expect(
+      asUser(db, ids.admin, () => db.query("insert into storage.objects (bucket_id, name) values ('hotel-images', 'x/3.webp')")),
+    ).resolves.toBeTruthy();
+  });
+});

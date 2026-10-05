@@ -6,6 +6,7 @@ import { getDictionary } from "@/i18n/server";
 import { ActionForm } from "@/components/action-form";
 import { ClinicFields, StatusBadge } from "../components";
 import { createClinicUser, resetUserPassword, setClinicActive, setUserActive, updateClinic } from "../actions";
+import { setClinicHotelAccess } from "../../oteller/actions";
 
 export default async function ClinicDetailPage({ params }: PageProps<"/admin/klinikler/[id]">) {
   await requireAdmin();
@@ -25,6 +26,12 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
     .select("id, full_name, is_active, must_change_password")
     .eq("clinic_id", id)
     .order("full_name");
+
+  const [{ data: hotels }, { data: access }] = await Promise.all([
+    supabase.from("hotels").select("id, name, is_active").order("name"),
+    supabase.from("clinic_hotel_access").select("hotel_id").eq("clinic_id", id),
+  ]);
+  const partnered = new Set((access ?? []).map((a) => a.hotel_id as string));
 
   return (
     <div className="space-y-6">
@@ -77,6 +84,28 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
             )}
           </ActionForm>
         </div>
+      </div>
+
+      <div className="card p-6">
+        <h2 className="font-semibold">{t.hotels.hotelAccessTitle}</h2>
+        <p className="mb-4 mt-1 text-sm text-slate-600">{t.hotels.hotelAccessIntro}</p>
+        <ActionForm action={setClinicHotelAccess.bind(null, clinic.id)}>
+          {(pending) => (
+            <>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {(hotels ?? []).map((h) => (
+                  <label key={h.id} className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="hotel_id" value={h.id} defaultChecked={partnered.has(h.id)} className="h-4 w-4 accent-teal-700" />
+                    <span className={h.is_active ? "" : "text-slate-400"}>{h.name}</span>
+                  </label>
+                ))}
+              </div>
+              <button type="submit" disabled={pending} className="btn-primary mt-4">
+                {t.common.save}
+              </button>
+            </>
+          )}
+        </ActionForm>
       </div>
 
       <div className="card overflow-x-auto">
