@@ -14,6 +14,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           { href: "/admin", label: t.nav.dashboard },
           { href: "/admin/klinikler", label: t.nav.clinics },
           { href: "/admin/oteller", label: t.nav.hotels },
+          { href: "/admin/musaitlik", label: t.nav.availability },
         ]
       : [{ href: "/klinik", label: t.nav.dashboard }];
 
