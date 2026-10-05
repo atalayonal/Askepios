@@ -17,7 +17,12 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     // Supabase Auth giriş denemelerini kendi tarafında sınırlar (429).
-    return { error: error.status === 429 ? t.auth.tooManyAttempts : t.auth.invalidCredentials, email };
+    if (error.status === 429) return { error: t.auth.tooManyAttempts, email };
+    if (error.code === "invalid_credentials") return { error: t.auth.invalidCredentials, email };
+    if (error.code === "email_not_confirmed") return { error: t.auth.emailNotConfirmed, email };
+    // Yanlış anahtar veya adres gibi kurulum hataları "hatalı şifre" gibi görünmesin.
+    console.error("Giriş hatası", error.status, error.code, error.message);
+    return { error: `${t.auth.loginFailed} ${error.code ?? error.status ?? "bilinmiyor"}`, email };
   }
 
   redirect("/");
