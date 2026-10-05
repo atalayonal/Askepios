@@ -1,9 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { requireClinicUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary } from "@/i18n/server";
+import { notifyNewReservation } from "@/lib/notifications/reservations";
 
 export type Quote =
   | { ok: true; nights: { night: string; price: number }[]; total: number; currency: string }
@@ -49,5 +51,6 @@ export async function createReservation(_prev: RequestState, fd: FormData): Prom
   });
   if (error) return { error: t.clinic.errors[error.message] ?? t.common.unexpectedError };
 
+  after(() => notifyNewReservation(data as string));
   redirect(`/klinik/rezervasyonlar/${data}?yeni=1`);
 }

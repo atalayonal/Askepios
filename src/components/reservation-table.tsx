@@ -30,7 +30,7 @@ export function ReservationTable({
   locale: Locale;
   showClinic?: boolean;
 }) {
-  if (!items.length) return <p className="p-4 text-sm text-slate-500">{t.clinic.noReservations}</p>;
+  if (!items.length) return <p className="p-4 text-sm text-slate-500">{showClinic ? t.common.none : t.clinic.noReservations}</p>;
   return (
     <div className="overflow-x-auto">
       <table className="table">
