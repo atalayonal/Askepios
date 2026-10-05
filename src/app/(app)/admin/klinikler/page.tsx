@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary } from "@/i18n/server";
 import { ActionForm } from "@/components/action-form";
+import { SubmitButton } from "@/components/submit-button";
 import { createClinic } from "./actions";
 import { ClinicFields, StatusBadge } from "./components";
 
@@ -58,14 +59,14 @@ export default async function ClinicsPage() {
       <div className="card max-w-xl p-6">
         <h2 className="mb-4 font-semibold">{t.admin.newClinic}</h2>
         <ActionForm action={createClinic} className="space-y-3">
-          {(pending) => (
+          <>
             <>
               <ClinicFields t={t} />
-              <button type="submit" disabled={pending} className="btn-primary">
+              <SubmitButton className="btn-primary">
                 {t.common.save}
-              </button>
+              </SubmitButton>
             </>
-          )}
+          </>
         </ActionForm>
       </div>
     </div>

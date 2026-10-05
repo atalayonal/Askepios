@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getDictionary } from "@/i18n/server";
 import { withSignedUrls } from "@/lib/images";
 import { ActionForm } from "@/components/action-form";
+import { SubmitButton } from "@/components/submit-button";
 import { StatusBadge } from "../../klinikler/components";
 import { HotelFields, RoomFields } from "../components";
 import { ImageManager } from "../image-manager";
@@ -77,14 +78,14 @@ export default async function HotelDetailPage({ params }: PageProps<"/admin/otel
         <details className="p-4">
           <summary className="cursor-pointer text-sm font-medium text-teal-800">{t.hotels.newRoom}</summary>
           <ActionForm action={createRoomType.bind(null, hotel.id)} className="mt-4 space-y-4">
-            {(pending) => (
+            <>
               <>
                 <RoomFields t={t} />
-                <button type="submit" disabled={pending} className="btn-primary">
+                <SubmitButton className="btn-primary">
                   {t.common.save}
-                </button>
+                </SubmitButton>
               </>
-            )}
+            </>
           </ActionForm>
         </details>
       </section>
@@ -92,14 +93,14 @@ export default async function HotelDetailPage({ params }: PageProps<"/admin/otel
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="card p-6 lg:col-span-2">
           <ActionForm action={updateHotel.bind(null, hotel.id)} className="space-y-4">
-            {(pending) => (
+            <>
               <>
                 <HotelFields t={t} defaults={hotel} />
-                <button type="submit" disabled={pending} className="btn-primary">
+                <SubmitButton className="btn-primary">
                   {t.common.save}
-                </button>
+                </SubmitButton>
               </>
-            )}
+            </>
           </ActionForm>
         </section>
 
@@ -107,7 +108,7 @@ export default async function HotelDetailPage({ params }: PageProps<"/admin/otel
           <section className="card p-6">
             <h2 className="mb-4 text-sm font-semibold">{t.hotels.contactTitle}</h2>
             <ActionForm action={updateHotelContacts.bind(null, hotel.id)} className="space-y-3">
-              {(pending) => (
+              <>
                 <>
                   {(
                     [
@@ -126,11 +127,11 @@ export default async function HotelDetailPage({ params }: PageProps<"/admin/otel
                     <span className="text-sm font-medium">{t.hotels.internalNotes}</span>
                     <textarea name="internal_notes" rows={3} defaultValue={contacts?.internal_notes ?? ""} className="input mt-1" />
                   </label>
-                  <button type="submit" disabled={pending} className="btn-primary">
+                  <SubmitButton className="btn-primary">
                     {t.common.save}
-                  </button>
+                  </SubmitButton>
                 </>
-              )}
+              </>
             </ActionForm>
           </section>
 

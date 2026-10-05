@@ -6,6 +6,7 @@ import { getDictionary, getLocale } from "@/i18n/server";
 import { withSignedUrls } from "@/lib/images";
 import { formatDate, formatMoney } from "@/lib/format";
 import { ActionForm } from "@/components/action-form";
+import { SubmitButton } from "@/components/submit-button";
 import { StatusBadge } from "../../../../klinikler/components";
 import { RoomFields } from "../../../components";
 import { ImageManager } from "../../../image-manager";
@@ -97,7 +98,7 @@ export default async function RoomDetailPage({ params }: PageProps<"/admin/otell
         <div className="border-t border-slate-100 p-4">
           <h3 className="mb-3 text-sm font-semibold">{t.hotels.newRate}</h3>
           <ActionForm action={createRate.bind(null, room.id, hotelId)} className="grid items-end gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {(pending) => (
+            <>
               <>
                 <label className="block">
                   <span className="text-xs font-medium">{t.hotels.validFrom}</span>
@@ -140,11 +141,11 @@ export default async function RoomDetailPage({ params }: PageProps<"/admin/otell
                     ))}
                   </select>
                 </label>
-                <button type="submit" disabled={pending} className="btn-primary">
+                <SubmitButton className="btn-primary">
                   {t.common.save}
-                </button>
+                </SubmitButton>
               </>
-            )}
+            </>
           </ActionForm>
         </div>
       </section>
@@ -156,14 +157,14 @@ export default async function RoomDetailPage({ params }: PageProps<"/admin/otell
 
       <section className="card max-w-3xl p-6">
         <ActionForm action={updateRoomType.bind(null, room.id, hotelId)} className="space-y-4">
-          {(pending) => (
+          <>
             <>
               <RoomFields t={t} defaults={room} />
-              <button type="submit" disabled={pending} className="btn-primary">
+              <SubmitButton className="btn-primary">
                 {t.common.save}
-              </button>
+              </SubmitButton>
             </>
-          )}
+          </>
         </ActionForm>
       </section>
     </div>

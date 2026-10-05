@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getDictionary, getLocale } from "@/i18n/server";
 import { ReservationDetail } from "@/components/reservation-detail";
 import { ActionForm } from "@/components/action-form";
+import { SubmitButton } from "@/components/submit-button";
 import { addInternalNote, changeStatus } from "../actions";
 
 const TRANSITIONS: Record<string, string[]> = {
@@ -61,7 +62,7 @@ export default async function AdminReservationPage({ params }: PageProps<"/admin
           <h2 className="mb-3 font-semibold">{t.reservations.changeStatus}</h2>
           {next.length ? (
             <ActionForm action={changeStatus.bind(null, reservation.id)} className="space-y-3">
-              {(pending) => (
+              <>
                 <>
                   <label className="block">
                     <span className="text-sm font-medium">{t.reservations.statusNote}</span>
@@ -69,20 +70,18 @@ export default async function AdminReservationPage({ params }: PageProps<"/admin
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {next.map((s) => (
-                      <button
+                      <SubmitButton
                         key={s}
-                        type="submit"
                         name="status"
                         value={s}
-                        disabled={pending}
                         className={s === "CONFIRMED" ? "btn-primary" : "btn-secondary"}
                       >
                         {t.reservations.actionLabels[s]}
-                      </button>
+                      </SubmitButton>
                     ))}
                   </div>
                 </>
-              )}
+              </>
             </ActionForm>
           ) : (
             <p className="text-sm text-slate-500">{t.reservations.noTransitions}</p>
@@ -102,14 +101,14 @@ export default async function AdminReservationPage({ params }: PageProps<"/admin
             ))}
           </ul>
           <ActionForm action={addInternalNote.bind(null, reservation.id)} className="space-y-2" resetOnSuccess>
-            {(pending) => (
+            <>
               <>
                 <textarea name="body" rows={2} required className="input" />
-                <button type="submit" disabled={pending} className="btn-secondary">
+                <SubmitButton className="btn-secondary">
                   {t.reservations.addNote}
-                </button>
+                </SubmitButton>
               </>
-            )}
+            </>
           </ActionForm>
         </section>
       </div>

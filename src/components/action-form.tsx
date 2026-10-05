@@ -4,7 +4,10 @@ import { useActionState, type ReactNode } from "react";
 
 export type ActionFormState = { error?: string; message?: string; password?: string };
 
-/** Sunucu işlemi çalıştıran form; hata, başarı mesajı ve (varsa) bir kez gösterilecek geçici şifreyi gösterir. */
+/**
+ * Sunucu işlemi çalıştıran form; hata, başarı mesajı ve (varsa) bir kez gösterilecek geçici şifreyi gösterir.
+ * Sunucu bileşenlerinden kullanıldığı için children fonksiyon olamaz; gönderim durumu için SubmitButton kullanın.
+ */
 export function ActionForm({
   action,
   children,
@@ -12,11 +15,11 @@ export function ActionForm({
   resetOnSuccess = false,
 }: {
   action: (prev: ActionFormState, formData: FormData) => Promise<ActionFormState>;
-  children: (pending: boolean) => ReactNode;
+  children: ReactNode;
   className?: string;
   resetOnSuccess?: boolean;
 }) {
-  const [state, formAction, pending] = useActionState(action, {});
+  const [state, formAction] = useActionState(action, {});
 
   return (
     <form action={formAction} className={className} key={resetOnSuccess && state.message ? state.message + (state.password ?? "") : undefined}>
@@ -31,7 +34,7 @@ export function ActionForm({
           {state.password && <p className="mt-2 select-all font-mono text-base font-semibold tracking-wide">{state.password}</p>}
         </div>
       )}
-      {children(pending)}
+      {children}
     </form>
   );
 }

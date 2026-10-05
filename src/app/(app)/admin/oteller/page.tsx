@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary } from "@/i18n/server";
 import { ActionForm } from "@/components/action-form";
+import { SubmitButton } from "@/components/submit-button";
 import { StatusBadge } from "../klinikler/components";
 import { HotelFields } from "./components";
 import { createHotel } from "./actions";
@@ -65,14 +66,14 @@ export default async function HotelsPage() {
       <details className="card max-w-3xl p-6">
         <summary className="cursor-pointer font-semibold">{t.hotels.newHotel}</summary>
         <ActionForm action={createHotel} className="mt-4 space-y-4">
-          {(pending) => (
+          <>
             <>
               <HotelFields t={t} />
-              <button type="submit" disabled={pending} className="btn-primary">
+              <SubmitButton className="btn-primary">
                 {t.common.save}
-              </button>
+              </SubmitButton>
             </>
-          )}
+          </>
         </ActionForm>
       </details>
     </div>
