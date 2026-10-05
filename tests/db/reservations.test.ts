@@ -357,3 +357,40 @@ describe("görsel depolama", () => {
     ).resolves.toBeTruthy();
   });
 });
+
+describe("müsaitlik yönetimi", () => {
+  async function setAvailability(userId: string, rooms: string[], from: string, to: string, available: boolean) {
+    return asUser(db, userId, () => db.query("select public.set_room_availability($1, $2, $3, $4)", [rooms, from, to, available]));
+  }
+  async function closures(room: string) {
+    const { rows } = await db.query(
+      "select to_char(date_from, 'MM-DD') as f, to_char(date_to, 'MM-DD') as t from room_closures where room_type_id = $1 and date_from >= '2031-01-01' order by date_from",
+      [room],
+    );
+    return rows.map((r) => `${r.f}..${r.t}`);
+  }
+
+  it("admin aralık kapatır; ortasını açınca kapalı aralık ikiye bölünür", async () => {
+    await setAvailability(ids.admin, [ids.room], "2031-03-01", "2031-03-10", false);
+    expect(await closures(ids.room)).toEqual(["03-01..03-10"]);
+    await setAvailability(ids.admin, [ids.room], "2031-03-04", "2031-03-05", true);
+    expect(await closures(ids.room)).toEqual(["03-01..03-03", "03-06..03-10"]);
+  });
+
+  it("kapalı aralıkla çakışan yeni kapatma tek parça olur", async () => {
+    await setAvailability(ids.admin, [ids.room], "2031-03-02", "2031-03-08", false);
+    expect(await closures(ids.room)).toEqual(["03-01..03-01", "03-02..03-08", "03-09..03-10"]);
+    await setAvailability(ids.admin, [ids.room], "2031-03-01", "2031-03-10", true);
+    expect(await closures(ids.room)).toEqual([]);
+  });
+
+  it("birden fazla odaya aynı anda uygulanır", async () => {
+    await setAvailability(ids.admin, [ids.room, ids.otherRoom], "2031-04-01", "2031-04-02", false);
+    expect(await closures(ids.room)).toEqual(["04-01..04-02"]);
+    expect(await closures(ids.otherRoom)).toEqual(["04-01..04-02"]);
+  });
+
+  it("klinik müsaitliği değiştiremez", async () => {
+    await expect(setAvailability(ids.userA, [ids.room], "2031-05-01", "2031-05-02", false)).rejects.toThrow("not_admin");
+  });
+});
