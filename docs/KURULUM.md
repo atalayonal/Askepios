@@ -55,3 +55,6 @@ Bu değişkenler yoksa sistem e-posta göndermeden çalışmaya devam eder.
 
 Yeni bir migration eklendiğinde `npm run db:bundle` ile `supabase/kurulum.sql` yenilenir.
 Canlıdaki projeye sadece **yeni** migration dosyası SQL Editor'da çalıştırılır; `kurulum.sql` boş bir proje içindir.
+
+`supabase/duzeltmeler/` altındaki dosyalar, daha önce kurulmuş canlı projeyi yeni başlangıç verisine uyduran tek seferlik
+düzeltmelerdir; SQL Editor'da bir kez çalıştırılır. Boş bir projeye `kurulum.sql` ile kurulum yapıldıysa gerekmez.

@@ -290,16 +290,19 @@ describe("fiyat dönemleri", () => {
 });
 
 describe("başlangıç verisi", () => {
-  it("seed.sql hatasız yüklenir: 11 otel, her biri 3 fiyatlı", async () => {
+  it("seed.sql hatasız yüklenir: 11 otel, her birinde Single/Double/Triple oda", async () => {
     const { readFileSync } = await import("node:fs");
     const path = await import("node:path");
     const seed = readFileSync(path.resolve(__dirname, "../../supabase/seed.sql"), "utf8");
     const before = await db.query("select count(*)::int as n from hotels");
     await db.query(seed);
     const hotels = await db.query("select count(*)::int as n from hotels");
+    const rooms = await db.query("select count(*)::int as n from room_types where name_tr in ('Single Oda', 'Double Oda', 'Triple Oda')");
     const rates = await db.query("select count(*)::int as n from room_rates where valid_from = '2026-09-01'");
     expect(hotels.rows[0].n - before.rows[0].n).toBe(11);
-    expect(rates.rows[0].n).toBe(33);
+    expect(rooms.rows[0].n).toBe(33);
+    // Her oda, kapasitesine kadar her kişi sayısı için aynı oda fiyatıyla: 11 × (1 + 2 + 3)
+    expect(rates.rows[0].n).toBe(66);
   });
 });
 

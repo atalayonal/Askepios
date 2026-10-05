@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary } from "@/i18n/server";
 import { ActionForm } from "@/components/action-form";
+import { SubmitButton } from "@/components/submit-button";
 import { ClinicFields, StatusBadge } from "../components";
 import { createClinicUser, resetUserPassword, setClinicActive, setUserActive, updateClinic } from "../actions";
 import { setClinicHotelAccess } from "../../oteller/actions";
@@ -53,21 +54,21 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="card p-6">
           <ActionForm action={updateClinic.bind(null, clinic.id)} className="space-y-3">
-            {(pending) => (
+            <>
               <>
                 <ClinicFields t={t} defaults={clinic} />
-                <button type="submit" disabled={pending} className="btn-primary">
+                <SubmitButton className="btn-primary">
                   {t.common.save}
-                </button>
+                </SubmitButton>
               </>
-            )}
+            </>
           </ActionForm>
         </div>
 
         <div className="card p-6">
           <h2 className="mb-4 font-semibold">{t.admin.newUser}</h2>
           <ActionForm action={createClinicUser.bind(null, clinic.id)} className="space-y-3" resetOnSuccess>
-            {(pending) => (
+            <>
               <>
                 <label className="block">
                   <span className="text-sm font-medium">{t.admin.fullName}</span>
@@ -77,11 +78,11 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
                   <span className="text-sm font-medium">{t.common.email}</span>
                   <input name="email" type="email" required className="input mt-1" />
                 </label>
-                <button type="submit" disabled={pending} className="btn-primary">
+                <SubmitButton className="btn-primary">
                   {t.common.save}
-                </button>
+                </SubmitButton>
               </>
-            )}
+            </>
           </ActionForm>
         </div>
       </div>
@@ -90,7 +91,7 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
         <h2 className="font-semibold">{t.hotels.hotelAccessTitle}</h2>
         <p className="mb-4 mt-1 text-sm text-slate-600">{t.hotels.hotelAccessIntro}</p>
         <ActionForm action={setClinicHotelAccess.bind(null, clinic.id)}>
-          {(pending) => (
+          <>
             <>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {(hotels ?? []).map((h) => (
@@ -100,11 +101,11 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
                   </label>
                 ))}
               </div>
-              <button type="submit" disabled={pending} className="btn-primary mt-4">
+              <SubmitButton className="btn-primary mt-4">
                 {t.common.save}
-              </button>
+              </SubmitButton>
             </>
-          )}
+          </>
         </ActionForm>
       </div>
 
@@ -129,11 +130,11 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
                 <td>
                   <div className="flex flex-wrap items-start gap-2">
                     <ActionForm action={resetUserPassword.bind(null, u.id, clinic.id)}>
-                      {(pending) => (
-                        <button type="submit" disabled={pending} className="btn-secondary">
+                      <>
+                        <SubmitButton className="btn-secondary">
                           {t.admin.resetPassword}
-                        </button>
-                      )}
+                        </SubmitButton>
+                      </>
                     </ActionForm>
                     <form action={setUserActive.bind(null, u.id, clinic.id, !u.is_active)}>
                       <button type="submit" className="btn-secondary">
