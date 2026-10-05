@@ -311,3 +311,33 @@ describe("admin", () => {
     expect(rows[0].changed).toBe(true);
   });
 });
+
+describe("profil ve şifre", () => {
+  it("yeni kullanıcı ilk girişte şifre değiştirmek zorunda; kendi bayrağını kapatabilir", async () => {
+    const id = await createUser(db, "yeni@klinik.test", "clinic_user", ids.clinicA);
+    const before = await db.query("select must_change_password from profiles where id = $1", [id]);
+    expect(before.rows[0].must_change_password).toBe(true);
+    await asUser(db, id, () => db.query("select public.mark_password_changed()"));
+    const after = await db.query("select must_change_password from profiles where id = $1", [id]);
+    expect(after.rows[0].must_change_password).toBe(false);
+  });
+
+  it("klinik kullanıcısı kendi rolünü ya da kliniğini değiştiremez", async () => {
+    const result = await asUser(db, ids.userA, () =>
+      db.query("update profiles set role = 'admin', clinic_id = null where id = $1", [ids.userA]),
+    );
+    expect(result.rowCount).toBe(0);
+    const { rows } = await db.query("select role from profiles where id = $1", [ids.userA]);
+    expect(rows[0].role).toBe("clinic_user");
+  });
+
+  it("giriş yapmamış (anon) kullanıcı hiçbir tabloyu okuyamaz", async () => {
+    await db.query("begin");
+    try {
+      await db.query("set local role anon");
+      await expect(db.query("select * from hotels")).rejects.toThrow(/permission denied/);
+    } finally {
+      await db.query("rollback");
+    }
+  });
+});

@@ -46,3 +46,12 @@ npm run typecheck
 npm test
 npm run build
 ```
+
+## Kullanıcılar
+
+- Açık kayıt yoktur. Klinik kullanıcılarını admin, **Klinikler** sayfasından oluşturur; sistem geçici bir şifre üretir ve bir kez gösterir. Kullanıcı ilk girişte kendi şifresini belirler.
+- İlk Askepios yöneticisi komut satırından oluşturulur:
+
+```bash
+node --env-file=.env.local scripts/create-admin.mjs ad@askepios.com "Ad Soyad"
+```
