@@ -27,6 +27,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: supabase/kurulum.sql güncel mi
+        run: npm run db:bundle && git diff --exit-code supabase/kurulum.sql
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
