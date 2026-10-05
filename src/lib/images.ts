@@ -7,7 +7,7 @@ export type ImageRow = { id: string; storage_path: string; sort_order: number; i
 export type ImageWithUrl = ImageRow & { url: string | null };
 
 /** Özel depodaki görseller için 1 saat geçerli imzalı adresler üretir. */
-export async function withSignedUrls(supabase: SupabaseClient, images: ImageRow[]): Promise<ImageWithUrl[]> {
+export async function withSignedUrls<T extends ImageRow>(supabase: SupabaseClient, images: T[]): Promise<(T & { url: string | null })[]> {
   if (images.length === 0) return [];
   const { data } = await supabase.storage.from(IMAGE_BUCKET).createSignedUrls(
     images.map((i) => i.storage_path),

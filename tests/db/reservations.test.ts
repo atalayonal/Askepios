@@ -394,3 +394,30 @@ describe("müsaitlik yönetimi", () => {
     await expect(setAvailability(ids.userA, [ids.room], "2031-05-01", "2031-05-02", false)).rejects.toThrow("not_admin");
   });
 });
+
+describe("fiyat teklifi (quote_reservation)", () => {
+  async function quote(userId: string, room: string, checkIn: string, checkOut: string, guests: number) {
+    return asUser(db, userId, async () => {
+      const { rows } = await db.query("select public.quote_reservation($1, $2, $3, $4::smallint) as q", [room, checkIn, checkOut, guests]);
+      return rows[0].q;
+    });
+  }
+
+  it("müsait konaklama için gece gece fiyat ve toplam döner", async () => {
+    const q = await quote(ids.userA, ids.room, "2030-10-20", "2030-10-22", 2);
+    expect(q).toMatchObject({ ok: true, total: 240, currency: "EUR" });
+    expect(q.nights).toHaveLength(2);
+  });
+
+  it("kapalı gece varsa müsait değil der", async () => {
+    expect(await quote(ids.userA, ids.room, "2030-10-14", "2030-10-17", 1)).toEqual({ ok: false, reason: "room_unavailable" });
+  });
+
+  it("kliniğe özel fiyatı kullanır", async () => {
+    expect(await quote(ids.userB, ids.room, "2030-10-20", "2030-10-21", 1)).toMatchObject({ ok: true, total: 90 });
+  });
+
+  it("anlaşmasız otel için fiyat vermez", async () => {
+    await expect(quote(ids.userA, ids.otherRoom, "2030-10-20", "2030-10-21", 1)).rejects.toThrow("hotel_not_partnered");
+  });
+});
