@@ -30,11 +30,11 @@ Diğer yöneticiler aynı şekilde eklenir. Klinik kullanıcıları ise uygulama
 ## 3. Vercel
 
 1. [vercel.com](https://vercel.com) → GitHub hesabınızla giriş → **Add New → Project** → `Askepios` deposunu seçin → **Import**.
-2. **Environment Variables** bölümüne şunları ekleyin (değerler Supabase → **Project Settings → API Keys** sayfasında):
+2. **Environment Variables** bölümüne şunları ekleyin (anahtarlar Supabase → **Project Settings → API Keys** sayfasında; adres aşağıda):
 
 | Ad | Değer |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Project URL (`https://xxxx.supabase.co`) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL, `https://xxxx.supabase.co` biçiminde. Supabase'de üstteki **Connect** düğmesinde ya da **Project Settings → Data API** sayfasında yazar. Bulamazsanız **Project Settings → General**'daki **Project ID**'yi `https://PROJECT-ID.supabase.co` içine koyun. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Publishable** anahtar (eski adıyla `anon public`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secret** anahtar (eski adıyla `service_role`). Gizlidir; başka hiçbir yere yazmayın. |
 | `ASKEPIOS_CONTACT_EMAIL` | Kliniklerin yazacağı Askepios e-postası |
