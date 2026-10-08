@@ -11,7 +11,7 @@ export async function LocaleSwitch() {
           <button
             type="submit"
             aria-pressed={locale === current}
-            className={`rounded px-2 py-1 uppercase ${locale === current ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-200"}`}
+            className={`rounded-md px-2 py-1 uppercase ${locale === current ? "bg-white font-semibold text-navy" : "text-white/80 hover:bg-white/15"}`}
           >
             {locale}
           </button>

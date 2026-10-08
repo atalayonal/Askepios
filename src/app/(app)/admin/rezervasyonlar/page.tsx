@@ -56,7 +56,7 @@ export default async function AdminReservationsPage({ searchParams }: PageProps<
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">{t.reservations.title}</h1>
+      <h1 className="page-title">{t.reservations.title}</h1>
 
       <form className="card grid gap-3 p-4 sm:grid-cols-3 lg:grid-cols-7">
         <input name="ara" defaultValue={q} placeholder={t.reservations.search} className="input lg:col-span-2" />
@@ -96,8 +96,8 @@ export default async function AdminReservationsPage({ searchParams }: PageProps<
         </div>
       </form>
 
-      <div className="card">
-        <ReservationTable items={items} hrefBase="/admin/rezervasyonlar" t={t} locale={locale} showClinic />
+      <div className="card overflow-hidden">
+        <ReservationTable items={items} hrefBase="/admin/rezervasyonlar" t={t} locale={locale} showClinic decide />
       </div>
     </div>
   );

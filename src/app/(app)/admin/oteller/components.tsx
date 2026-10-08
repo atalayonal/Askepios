@@ -1,4 +1,26 @@
-import type { Dictionary } from "@/i18n/dictionaries";
+import type { Dictionary, Locale } from "@/i18n/dictionaries";
+import { HOTEL_AMENITIES, ROOM_AMENITIES } from "@/lib/amenities";
+import { AmenityIcon } from "@/components/amenity-icon";
+
+/** Özellik onay kutuları (Wi-Fi, otopark…). */
+function AmenityChecklist({ kind, selected, locale, legend }: { kind: "hotel" | "room"; selected?: string[]; locale: Locale; legend: string }) {
+  const labels: Record<string, { tr: string; en: string }> = kind === "hotel" ? HOTEL_AMENITIES : ROOM_AMENITIES;
+  const chosen = new Set(selected ?? []);
+  return (
+    <fieldset className="sm:col-span-2">
+      <legend className="text-sm font-medium">{legend}</legend>
+      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {Object.entries(labels).map(([key, label]) => (
+          <label key={key} className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm has-[:checked]:border-blue has-[:checked]:bg-sky">
+            <input type="checkbox" name="amenities" value={key} defaultChecked={chosen.has(key)} className="accent-blue" />
+            <AmenityIcon name={key} className="h-4 w-4 text-muted" />
+            {label[locale]}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
 
 type HotelDefaults = {
   name: string;
@@ -9,9 +31,10 @@ type HotelDefaults = {
   website: string | null;
   description_tr: string;
   description_en: string;
+  amenities?: string[];
 };
 
-export function HotelFields({ t, defaults }: { t: Dictionary; defaults?: HotelDefaults }) {
+export function HotelFields({ t, locale, defaults }: { t: Dictionary; locale: Locale; defaults?: HotelDefaults }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="block sm:col-span-2">
@@ -53,6 +76,7 @@ export function HotelFields({ t, defaults }: { t: Dictionary; defaults?: HotelDe
         <span className="text-sm font-medium">{t.hotels.descriptionEn}</span>
         <textarea name="description_en" rows={4} defaultValue={defaults?.description_en} className="input mt-1" />
       </label>
+      <AmenityChecklist kind="hotel" selected={defaults?.amenities} locale={locale} legend={t.ui.hotelAmenities} />
     </div>
   );
 }
@@ -64,9 +88,11 @@ type RoomDefaults = {
   description_en: string;
   bed_info: string;
   max_occupancy: number;
+  size_m2?: number | null;
+  amenities?: string[];
 };
 
-export function RoomFields({ t, defaults }: { t: Dictionary; defaults?: RoomDefaults }) {
+export function RoomFields({ t, locale, defaults }: { t: Dictionary; locale: Locale; defaults?: RoomDefaults }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="block">
@@ -85,6 +111,10 @@ export function RoomFields({ t, defaults }: { t: Dictionary; defaults?: RoomDefa
         <span className="text-sm font-medium">{t.hotels.bedInfo}</span>
         <input name="bed_info" defaultValue={defaults?.bed_info} className="input mt-1" />
       </label>
+      <label className="block">
+        <span className="text-sm font-medium">{t.ui.roomSize}</span>
+        <input name="size_m2" type="number" min={5} max={500} defaultValue={defaults?.size_m2 ?? ""} className="input mt-1" />
+      </label>
       <label className="block sm:col-span-2">
         <span className="text-sm font-medium">{t.hotels.descriptionTr}</span>
         <textarea name="description_tr" rows={3} defaultValue={defaults?.description_tr} className="input mt-1" />
@@ -93,6 +123,7 @@ export function RoomFields({ t, defaults }: { t: Dictionary; defaults?: RoomDefa
         <span className="text-sm font-medium">{t.hotels.descriptionEn}</span>
         <textarea name="description_en" rows={3} defaultValue={defaults?.description_en} className="input mt-1" />
       </label>
+      <AmenityChecklist kind="room" selected={defaults?.amenities} locale={locale} legend={t.ui.roomAmenities} />
     </div>
   );
 }

@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/giris">) {
           <h2 className="mb-4 text-base font-semibold">{t.auth.loginTitle}</h2>
           <LoginForm t={t} notice={hesap === "pasif" ? t.auth.accountInactive : undefined} />
         </div>
-        <p className="mt-4 text-center text-xs text-slate-500">{t.auth.closedSystemNote}</p>
+        <p className="mt-4 text-center text-xs text-muted">{t.auth.closedSystemNote}</p>
       </div>
     </main>
   );

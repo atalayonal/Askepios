@@ -3,9 +3,12 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary, getLocale } from "@/i18n/server";
 import { toIso } from "@/lib/dates";
+import { fetchMonthReservations } from "@/lib/summary-data";
 import { ReservationTable } from "@/components/reservation-table";
+import { PendingCard } from "@/components/pending-card";
+import { SummaryTiles, monthLabel } from "@/components/monthly-summary";
 
-const COLUMNS = "id, reference, hotel_name, room_name, check_in, check_out, guest_count, total_price, currency, status, clinics(name)";
+const COLUMNS = "id, reference, hotel_name, room_name, check_in, check_out, guest_count, total_price, currency, status, created_at, clinics(name)";
 
 export default async function AdminDashboard() {
   await requireAdmin();
@@ -13,45 +16,58 @@ export default async function AdminDashboard() {
   const locale = await getLocale();
   const supabase = await createClient();
   const today = toIso(new Date());
+  const month = today.slice(0, 7);
 
   const count = async (query: PromiseLike<{ count: number | null }>) => (await query).count ?? 0;
-  const [pendingCount, confirmedCount, rejectedCount, clinics, hotels, { data: pending }, { data: upcoming }] = await Promise.all([
-    count(supabase.from("reservations").select("*", { count: "exact", head: true }).eq("status", "PENDING")),
-    count(supabase.from("reservations").select("*", { count: "exact", head: true }).eq("status", "CONFIRMED").gte("check_out", today)),
-    count(supabase.from("reservations").select("*", { count: "exact", head: true }).eq("status", "REJECTED")),
+  const [clinics, hotels, monthRows, { data: pending }, { data: upcoming }] = await Promise.all([
     count(supabase.from("clinics").select("*", { count: "exact", head: true }).eq("is_active", true)),
     count(supabase.from("hotels").select("*", { count: "exact", head: true }).eq("is_active", true)),
-    supabase.from("reservations").select(COLUMNS).eq("status", "PENDING").order("created_at").limit(20),
+    fetchMonthReservations(supabase, month),
+    supabase.from("reservations").select(COLUMNS).eq("status", "PENDING").order("created_at").limit(30),
     supabase.from("reservations").select(COLUMNS).eq("status", "CONFIRMED").gte("check_out", today).order("check_in").limit(20),
   ]);
 
-  const stats = [
-    { label: t.admin.pendingReservations, value: pendingCount, href: "/admin/rezervasyonlar?durum=PENDING" },
-    { label: t.admin.confirmedReservations, value: confirmedCount, href: "/admin/rezervasyonlar?durum=CONFIRMED" },
-    { label: t.reservations.rejectedReservations, value: rejectedCount, href: "/admin/rezervasyonlar?durum=REJECTED" },
-    { label: t.admin.clinicCount, value: clinics, href: "/admin/klinikler" },
-    { label: t.admin.hotelCount, value: hotels, href: "/admin/oteller" },
-  ];
-  const withClinic = (rows: typeof pending) =>
-    (rows ?? []).map((r) => ({ ...r, clinic_name: (r.clinics as unknown as { name: string } | null)?.name }));
+  const withClinic = <T extends { clinics: unknown }>(rows: T[] | null) =>
+    (rows ?? []).map((r) => ({ ...r, clinic_name: (r.clinics as { name: string } | null)?.name }));
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-semibold">{t.admin.dashboardTitle}</h1>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        {stats.map((s) => (
-          <Link key={s.label} href={s.href} className="card p-4 hover:border-teal-600">
-            <div className="text-sm text-slate-500">{s.label}</div>
-            <div className="mt-1 text-2xl font-semibold">{s.value}</div>
-          </Link>
-        ))}
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-end gap-4">
+        <div>
+          <h1 className="page-title">{t.admin.dashboardTitle}</h1>
+          <p className="mt-1 text-sm text-muted">
+            {clinics} {t.ui.activeClinics} · {hotels} {t.ui.activeHotels}
+          </p>
+        </div>
       </div>
-      <section className="card">
-        <h2 className="px-4 pt-4 font-semibold">{t.admin.pendingReservations}</h2>
-        <ReservationTable items={withClinic(pending)} hrefBase="/admin/rezervasyonlar" t={t} locale={locale} showClinic />
+
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-bold capitalize">{monthLabel(month, locale)}</h2>
+          <Link href="/admin/ozet" className="text-sm font-semibold text-blue hover:underline">
+            {t.ui.openSummary}
+          </Link>
+        </div>
+        <SummaryTiles rows={monthRows} t={t} locale={locale} admin />
       </section>
-      <section className="card">
-        <h2 className="px-4 pt-4 font-semibold">{t.reservations.upcomingConfirmed}</h2>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-bold">
+          {t.ui.awaitingDecision} <span className="font-medium text-muted">({pending?.length ?? 0})</span>
+        </h2>
+        {pending?.length ? (
+          <ul className="space-y-3">
+            {withClinic(pending).map((r) => (
+              <PendingCard key={r.id} r={r} t={t} locale={locale} />
+            ))}
+          </ul>
+        ) : (
+          <p className="card p-5 text-sm text-muted">{t.ui.nothingPending}</p>
+        )}
+      </section>
+
+      <section className="card overflow-hidden">
+        <h2 className="px-5 pb-2 pt-5 text-lg font-bold">{t.reservations.upcomingConfirmed}</h2>
         <ReservationTable items={withClinic(upcoming)} hrefBase="/admin/rezervasyonlar" t={t} locale={locale} showClinic />
       </section>
     </div>

@@ -24,10 +24,10 @@ export default async function ClinicReservationPage({ params, searchParams }: Pa
 
   return (
     <div className="space-y-4">
-      <Link href="/klinik/rezervasyonlar" className="text-sm text-slate-500 hover:underline">
+      <Link href="/klinik/rezervasyonlar" className="back-link">
         ← {t.clinic.myReservations}
       </Link>
-      {yeni && <p className="rounded-md bg-teal-50 px-3 py-2 text-sm text-teal-900">{t.clinic.submitted}</p>}
+      {yeni && <p className="rounded-md bg-sky px-3 py-2 text-sm text-navy">{t.clinic.submitted}</p>}
       <ReservationDetail reservation={reservation} guests={guests ?? []} history={history ?? []} t={t} locale={locale} />
     </div>
   );

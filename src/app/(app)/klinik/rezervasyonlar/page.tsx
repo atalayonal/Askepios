@@ -16,8 +16,8 @@ export default async function ClinicReservationsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">{t.clinic.myReservations}</h1>
-      <div className="card">
+      <h1 className="page-title">{t.clinic.myReservations}</h1>
+      <div className="card overflow-hidden">
         <ReservationTable items={data ?? []} hrefBase="/klinik/rezervasyonlar" t={t} locale={locale} />
       </div>
     </div>

@@ -84,17 +84,17 @@ export function ImageManager({
         {error && <span className="text-sm text-red-700">{error}</span>}
       </div>
       {images.length === 0 ? (
-        <p className="text-sm text-slate-500">{t.noImages}</p>
+        <p className="text-sm text-muted">{t.noImages}</p>
       ) : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {images.map((image, index) => (
-            <li key={image.id} className="overflow-hidden rounded-md border border-slate-200 bg-white">
-              <div className="relative aspect-[4/3] bg-slate-100">
+            <li key={image.id} className="overflow-hidden rounded-md border border-line bg-white">
+              <div className="relative aspect-[4/3] bg-background">
                 {image.url && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={image.url} alt="" className="h-full w-full object-cover" />
                 )}
-                {image.is_cover && <span className="badge absolute left-2 top-2 bg-teal-700 text-white">{t.cover}</span>}
+                {image.is_cover && <span className="badge absolute left-2 top-2 bg-blue text-white">{t.cover}</span>}
               </div>
               <div className="flex flex-wrap gap-1 p-2 text-xs">
                 {!image.is_cover && (

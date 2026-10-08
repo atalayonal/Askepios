@@ -17,7 +17,7 @@ export function PasswordForm({ t }: { t: Dictionary }) {
       <label className="block">
         <span className="text-sm font-medium">{t.auth.newPassword}</span>
         <input name="password" type="password" autoComplete="new-password" required minLength={10} className="input mt-1" />
-        <span className="mt-1 block text-xs text-slate-500">{t.auth.passwordRules}</span>
+        <span className="mt-1 block text-xs text-muted">{t.auth.passwordRules}</span>
       </label>
       <label className="block">
         <span className="text-sm font-medium">{t.auth.newPasswordRepeat}</span>

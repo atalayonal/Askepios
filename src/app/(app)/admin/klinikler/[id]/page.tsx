@@ -37,12 +37,12 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <Link href="/admin/klinikler" className="text-sm text-slate-500 hover:underline">
+        <Link href="/admin/klinikler" className="back-link">
           ← {t.admin.clinicsTitle}
         </Link>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold">{clinic.name}</h1>
+        <h1 className="page-title">{clinic.name}</h1>
         <StatusBadge active={clinic.is_active} labels={t.common} />
         <form action={setClinicActive.bind(null, clinic.id, !clinic.is_active)} className="ml-auto">
           <button type="submit" className="btn-secondary">
@@ -89,15 +89,15 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
 
       <div className="card p-6">
         <h2 className="font-semibold">{t.hotels.hotelAccessTitle}</h2>
-        <p className="mb-4 mt-1 text-sm text-slate-600">{t.hotels.hotelAccessIntro}</p>
+        <p className="mb-4 mt-1 text-sm text-muted">{t.hotels.hotelAccessIntro}</p>
         <ActionForm action={setClinicHotelAccess.bind(null, clinic.id)}>
           <>
             <>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {(hotels ?? []).map((h) => (
                   <label key={h.id} className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" name="hotel_id" value={h.id} defaultChecked={partnered.has(h.id)} className="h-4 w-4 accent-teal-700" />
-                    <span className={h.is_active ? "" : "text-slate-400"}>{h.name}</span>
+                    <input type="checkbox" name="hotel_id" value={h.id} defaultChecked={partnered.has(h.id)} className="h-4 w-4 accent-blue" />
+                    <span className={h.is_active ? "" : "text-muted/70"}>{h.name}</span>
                   </label>
                 ))}
               </div>
@@ -147,7 +147,7 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
             ))}
             {!users?.length && (
               <tr>
-                <td colSpan={3} className="text-slate-500">
+                <td colSpan={3} className="text-muted">
                   {t.common.none}
                 </td>
               </tr>

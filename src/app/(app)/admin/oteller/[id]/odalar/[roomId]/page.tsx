@@ -43,11 +43,11 @@ export default async function RoomDetailPage({ params }: PageProps<"/admin/otell
 
   return (
     <div className="space-y-6">
-      <Link href={`/admin/oteller/${hotelId}`} className="text-sm text-slate-500 hover:underline">
+      <Link href={`/admin/oteller/${hotelId}`} className="back-link">
         ← {hotelName}
       </Link>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold">{room.name_tr}</h1>
+        <h1 className="page-title">{room.name_tr}</h1>
         <StatusBadge active={room.is_active} labels={t.common} />
         <form action={setRoomActive.bind(null, room.id, hotelId, !room.is_active)} className="ml-auto">
           <button type="submit" className="btn-secondary">
@@ -88,14 +88,14 @@ export default async function RoomDetailPage({ params }: PageProps<"/admin/otell
             ))}
             {!rates?.length && (
               <tr>
-                <td colSpan={6} className="text-slate-500">
+                <td colSpan={6} className="text-muted">
                   {t.common.none}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-        <div className="border-t border-slate-100 p-4">
+        <div className="border-t border-line/70 p-4">
           <h3 className="mb-3 text-sm font-semibold">{t.hotels.newRate}</h3>
           <ActionForm action={createRate.bind(null, room.id, hotelId)} className="grid items-end gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <>
@@ -159,7 +159,7 @@ export default async function RoomDetailPage({ params }: PageProps<"/admin/otell
         <ActionForm action={updateRoomType.bind(null, room.id, hotelId)} className="space-y-4">
           <>
             <>
-              <RoomFields t={t} defaults={room} />
+              <RoomFields t={t} locale={locale} defaults={room} />
               <SubmitButton className="btn-primary">
                 {t.common.save}
               </SubmitButton>

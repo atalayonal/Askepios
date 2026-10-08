@@ -28,7 +28,8 @@ export async function changeStatus(reservationId: string, _prev: FormState, fd: 
   after(() => notifyStatusChange(reservationId));
   revalidatePath(`/admin/rezervasyonlar/${reservationId}`);
   revalidatePath("/admin/rezervasyonlar");
-  return { message: t.common.saved };
+  revalidatePath("/admin");
+  return { message: t.reservations.statusChangedTo[status] ?? t.common.saved };
 }
 
 export async function addInternalNote(reservationId: string, _prev: FormState, fd: FormData): Promise<FormState> {

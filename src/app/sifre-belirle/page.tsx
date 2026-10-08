@@ -12,7 +12,7 @@ export default async function SetPasswordPage() {
     <main className="flex flex-1 items-center justify-center p-4">
       <div className="card w-full max-w-sm p-6">
         <h1 className="text-base font-semibold">{t.auth.changePasswordTitle}</h1>
-        <p className="mb-4 mt-1 text-sm text-slate-600">{t.auth.changePasswordIntro}</p>
+        <p className="mb-4 mt-1 text-sm text-muted">{t.auth.changePasswordIntro}</p>
         <PasswordForm t={t} />
       </div>
     </main>

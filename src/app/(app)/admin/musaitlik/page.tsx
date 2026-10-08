@@ -67,8 +67,8 @@ export default async function AvailabilityPage({ searchParams }: PageProps<"/adm
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">{t.availability.title}</h1>
-        <p className="mt-1 text-sm text-slate-600">{t.availability.intro}</p>
+        <h1 className="page-title">{t.availability.title}</h1>
+        <p className="mt-1 text-sm text-muted">{t.availability.intro}</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -98,7 +98,7 @@ export default async function AvailabilityPage({ searchParams }: PageProps<"/adm
       {rows.length ? (
         <AvailabilityGrid days={days} rows={rows} weekdayLabels={weekdayLabels} t={t.availability} errorText={t.common.unexpectedError} />
       ) : (
-        <p className="text-sm text-slate-500">{t.availability.noRooms}</p>
+        <p className="text-sm text-muted">{t.availability.noRooms}</p>
       )}
     </div>
   );
