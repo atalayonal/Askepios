@@ -27,7 +27,7 @@ export function ClinicFields({
 
 export function StatusBadge({ active, labels }: { active: boolean; labels: { active: string; inactive: string } }) {
   return (
-    <span className={`badge ${active ? "bg-teal-50 text-teal-800" : "bg-slate-100 text-slate-600"}`}>
+    <span className={`badge ${active ? "bg-sky text-blue" : "bg-background text-muted"}`}>
       {active ? labels.active : labels.inactive}
     </span>
   );

@@ -58,3 +58,6 @@ Canlıdaki projeye sadece **yeni** migration dosyası SQL Editor'da çalıştır
 
 `supabase/duzeltmeler/` altındaki dosyalar, daha önce kurulmuş canlı projeyi yeni başlangıç verisine uyduran tek seferlik
 düzeltmelerdir; SQL Editor'da bir kez çalıştırılır. Boş bir projeye `kurulum.sql` ile kurulum yapıldıysa gerekmez.
+
+`supabase/otel-icerigi.sql` otellerin tanıtım bilgilerini, özelliklerini ve `public/otel-gorselleri/` altındaki görselleri
+veritabanına bağlar; `kurulum.sql` bunu içerir. Sadece boş alanları doldurur, panelden girilen bilgilere dokunmaz.

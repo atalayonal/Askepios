@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -6,12 +7,8 @@ import { getDictionary, getLocale } from "@/i18n/server";
 import { ReservationDetail } from "@/components/reservation-detail";
 import { ActionForm } from "@/components/action-form";
 import { SubmitButton } from "@/components/submit-button";
-import { addInternalNote, changeStatus } from "../actions";
-
-const TRANSITIONS: Record<string, string[]> = {
-  PENDING: ["CONFIRMED", "REJECTED", "CANCELLED"],
-  CONFIRMED: ["CANCELLED"],
-};
+import { DecisionPanel } from "@/components/decision";
+import { addInternalNote } from "../actions";
 
 export default async function AdminReservationPage({ params }: PageProps<"/admin/rezervasyonlar/[id]">) {
   await requireAdmin();
@@ -38,15 +35,17 @@ export default async function AdminReservationPage({ params }: PageProps<"/admin
     ...h,
     changed_by_name: (h.profiles as unknown as { full_name: string } | null)?.full_name,
   }));
-  const next = TRANSITIONS[reservation.status] ?? [];
   const dateTime = (iso: string) =>
     new Intl.DateTimeFormat(locale === "tr" ? "tr-TR" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Istanbul" }).format(new Date(iso));
 
   return (
     <div className="space-y-4">
-      <Link href="/admin/rezervasyonlar" className="text-sm text-slate-500 hover:underline">
-        ← {t.reservations.title}
+      <Link href="/admin/rezervasyonlar" className="back-link">
+        <ChevronLeft aria-hidden className="h-4 w-4" />
+        {t.reservations.title}
       </Link>
+
+      <DecisionPanel reservationId={reservation.id} status={reservation.status} t={t} />
 
       <ReservationDetail
         reservation={reservation}
@@ -57,44 +56,14 @@ export default async function AdminReservationPage({ params }: PageProps<"/admin
         clinicName={`${(reservation.clinics as unknown as { name: string }).name}${creator ? ` · ${creator.full_name}` : ""}`}
       />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="card p-5">
-          <h2 className="mb-3 font-semibold">{t.reservations.changeStatus}</h2>
-          {next.length ? (
-            <ActionForm action={changeStatus.bind(null, reservation.id)} className="space-y-3">
-              <>
-                <>
-                  <label className="block">
-                    <span className="text-sm font-medium">{t.reservations.statusNote}</span>
-                    <textarea name="note" rows={2} className="input mt-1" />
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {next.map((s) => (
-                      <SubmitButton
-                        key={s}
-                        name="status"
-                        value={s}
-                        className={s === "CONFIRMED" ? "btn-primary" : "btn-secondary"}
-                      >
-                        {t.reservations.actionLabels[s]}
-                      </SubmitButton>
-                    ))}
-                  </div>
-                </>
-              </>
-            </ActionForm>
-          ) : (
-            <p className="text-sm text-slate-500">{t.reservations.noTransitions}</p>
-          )}
-        </section>
-
+      <div className="grid gap-4">
         <section className="card p-5">
           <h2 className="mb-3 font-semibold">{t.reservations.internalNotes}</h2>
           <ul className="mb-3 space-y-2 text-sm">
             {(notes ?? []).map((n) => (
-              <li key={n.id} className="rounded-md bg-slate-50 px-3 py-2">
+              <li key={n.id} className="rounded-md bg-background px-3 py-2">
                 <p className="whitespace-pre-line">{n.body}</p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-muted">
                   {(n.profiles as unknown as { full_name: string } | null)?.full_name} · {dateTime(n.created_at)}
                 </p>
               </li>

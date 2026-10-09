@@ -82,13 +82,13 @@ export function AvailabilityGrid({
         <table className="border-collapse text-xs">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 min-w-48 border-b border-slate-200 bg-white px-3 py-2 text-left font-medium text-slate-500">
+              <th className="sticky left-0 z-10 min-w-48 border-b border-line bg-white px-3 py-2 text-left font-medium text-muted">
                 {t.room}
               </th>
               {days.map((day) => {
                 const weekday = new Date(`${day}T00:00:00Z`).getUTCDay();
                 return (
-                  <th key={day} className={`border-b border-slate-200 px-0.5 py-1 font-medium ${weekday === 0 || weekday === 6 ? "text-slate-400" : "text-slate-600"}`}>
+                  <th key={day} className={`border-b border-line px-0.5 py-1 font-medium ${weekday === 0 || weekday === 6 ? "text-muted/70" : "text-muted"}`}>
                     <div>{Number(day.slice(8))}</div>
                     <div className="font-normal">{weekdayLabels[weekday]}</div>
                   </th>
@@ -99,9 +99,9 @@ export function AvailabilityGrid({
           <tbody>
             {rows.map((row, r) => (
               <tr key={row.roomId}>
-                <th className="sticky left-0 z-10 border-b border-slate-100 bg-white px-3 py-1 text-left font-normal">
-                  <div className="font-medium text-slate-900">{row.hotelName}</div>
-                  <div className="text-slate-500">{row.roomName}</div>
+                <th className="sticky left-0 z-10 border-b border-line/70 bg-white px-3 py-1 text-left font-normal">
+                  <div className="font-medium text-foreground">{row.hotelName}</div>
+                  <div className="text-muted">{row.roomName}</div>
                 </th>
                 {days.map((day, d) => {
                   const closed = closedSets[r].has(day);
@@ -109,19 +109,19 @@ export function AvailabilityGrid({
                   const p = row.pending[day] ?? 0;
                   const c = row.confirmed[day] ?? 0;
                   return (
-                    <td key={day} className="border-b border-slate-100 p-0.5">
+                    <td key={day} className="border-b border-line/70 p-0.5">
                       <button
                         type="button"
                         onClick={() => click({ row: r, day: d })}
                         title={`${row.hotelName} · ${day} · ${closed ? t.closed : t.available}`}
                         className={`relative flex h-8 w-8 items-center justify-center rounded ${
-                          selected ? "ring-2 ring-teal-600" : ""
+                          selected ? "ring-2 ring-blue" : ""
                         } ${closed ? "bg-rose-100 text-rose-700" : "bg-emerald-50 hover:bg-emerald-100"}`}
                       >
                         {closed && "×"}
                         {(p > 0 || c > 0) && (
                           <span className="absolute bottom-0.5 flex gap-0.5">
-                            {c > 0 && <span className="h-1.5 w-1.5 rounded-full bg-teal-700" />}
+                            {c > 0 && <span className="h-1.5 w-1.5 rounded-full bg-blue" />}
                             {p > 0 && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
                           </span>
                         )}
@@ -135,7 +135,7 @@ export function AvailabilityGrid({
         </table>
       </div>
 
-      <div className="flex flex-wrap gap-4 text-xs text-slate-600">
+      <div className="flex flex-wrap gap-4 text-xs text-muted">
         <span className="flex items-center gap-1">
           <span className="h-3 w-3 rounded bg-emerald-50 ring-1 ring-emerald-200" /> {t.available}
         </span>
@@ -146,7 +146,7 @@ export function AvailabilityGrid({
           <span className="h-2 w-2 rounded-full bg-amber-500" /> {t.pendingLegend}
         </span>
         <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-teal-700" /> {t.confirmedLegend}
+          <span className="h-2 w-2 rounded-full bg-blue" /> {t.confirmedLegend}
         </span>
       </div>
 
@@ -154,7 +154,7 @@ export function AvailabilityGrid({
         <div className="card sticky bottom-4 flex flex-wrap items-end gap-3 p-4">
           <div className="text-sm">
             <div className="font-medium">{t.selection}</div>
-            <div className="text-slate-600">
+            <div className="text-muted">
               {selection.rows[1] - selection.rows[0] + 1} {t.roomsSelected} · {days[selection.days[0]]} → {days[selection.days[1]]}
             </div>
           </div>

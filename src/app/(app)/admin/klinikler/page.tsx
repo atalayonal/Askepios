@@ -18,7 +18,7 @@ export default async function ClinicsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">{t.admin.clinicsTitle}</h1>
+      <h1 className="page-title">{t.admin.clinicsTitle}</h1>
 
       <div className="card overflow-x-auto">
         <table className="table">
@@ -34,7 +34,7 @@ export default async function ClinicsPage() {
             {(clinics ?? []).map((c) => (
               <tr key={c.id}>
                 <td>
-                  <Link href={`/admin/klinikler/${c.id}`} className="font-medium text-teal-800 hover:underline">
+                  <Link href={`/admin/klinikler/${c.id}`} className="font-medium text-blue hover:underline">
                     {c.name}
                   </Link>
                 </td>
@@ -47,7 +47,7 @@ export default async function ClinicsPage() {
             ))}
             {!clinics?.length && (
               <tr>
-                <td colSpan={4} className="text-slate-500">
+                <td colSpan={4} className="text-muted">
                   {t.common.none}
                 </td>
               </tr>

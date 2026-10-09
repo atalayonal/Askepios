@@ -10,9 +10,21 @@ function money(amount: number, currency: string, locale: Locale) {
   return new Intl.NumberFormat(locale === "tr" ? "tr-TR" : "en-GB", { style: "currency", currency }).format(amount);
 }
 
-export function ReservationForm({ rooms, t, locale, today }: { rooms: Room[]; t: Dictionary["clinic"]; locale: Locale; today: string }) {
+export function ReservationForm({
+  rooms,
+  initialRoomId,
+  t,
+  locale,
+  today,
+}: {
+  rooms: Room[];
+  initialRoomId?: string;
+  t: Dictionary["clinic"];
+  locale: Locale;
+  today: string;
+}) {
   const [state, action, submitting] = useActionState<RequestState, FormData>(createReservation, {});
-  const [roomId, setRoomId] = useState(rooms[0]?.id ?? "");
+  const [roomId, setRoomId] = useState(initialRoomId ?? rooms[0]?.id ?? "");
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [guestCount, setGuestCount] = useState(1);
@@ -92,7 +104,7 @@ export function ReservationForm({ rooms, t, locale, today }: { rooms: Room[]; t:
       </div>
 
       {shownResult && (
-        <div className={`rounded-md px-3 py-2 text-sm ${shownResult.ok ? "bg-teal-50 text-teal-900" : "bg-amber-50 text-amber-900"}`} aria-live="polite">
+        <div className={`rounded-lg px-4 py-3 text-sm ${shownResult.ok ? "bg-success-soft text-success" : "bg-amber-soft text-foreground"}`} aria-live="polite">
           {shownResult.ok ? (
             <>
               <p className="font-medium">{t.available}</p>
@@ -100,7 +112,7 @@ export function ReservationForm({ rooms, t, locale, today }: { rooms: Room[]; t:
                 {shownResult.nights.length} {t.nights} ·{" "}
                 {[...new Set(shownResult.nights.map((n) => n.price))].map((p) => money(p, shownResult.currency, locale)).join(" / ")} {t.perNight}
               </p>
-              <p className="mt-1 text-base font-semibold">
+              <p className="mt-1 text-lg font-extrabold text-foreground">
                 {t.total}: {money(shownResult.total, shownResult.currency, locale)}
               </p>
             </>
@@ -112,7 +124,7 @@ export function ReservationForm({ rooms, t, locale, today }: { rooms: Room[]; t:
 
       <fieldset className="space-y-3">
         {Array.from({ length: guestCount }, (_, i) => (
-          <div key={i} className="grid gap-2 rounded-md border border-slate-200 p-3 sm:grid-cols-3">
+          <div key={i} className="grid gap-2 rounded-lg border border-line p-3">
             <legend className="sr-only">
               {t.guest} {i + 1}
             </legend>
@@ -139,7 +151,7 @@ export function ReservationForm({ rooms, t, locale, today }: { rooms: Room[]; t:
         <textarea name="notes" rows={3} className="input mt-1" />
       </label>
 
-      <button type="submit" disabled={submitting || !shownResult?.ok} className="btn-primary w-full sm:w-auto">
+      <button type="submit" disabled={submitting || !shownResult?.ok} className="btn-primary w-full py-3 text-base">
         {t.submit}
       </button>
     </form>

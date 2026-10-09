@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getDictionary } from "@/i18n/server";
+import { getDictionary, getLocale } from "@/i18n/server";
 import { ActionForm } from "@/components/action-form";
 import { SubmitButton } from "@/components/submit-button";
 import { StatusBadge } from "../klinikler/components";
@@ -11,6 +11,7 @@ import { createHotel } from "./actions";
 export default async function HotelsPage() {
   await requireAdmin();
   const t = await getDictionary();
+  const locale = await getLocale();
   const supabase = await createClient();
   const { data: hotels } = await supabase
     .from("hotels")
@@ -21,7 +22,7 @@ export default async function HotelsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">{t.hotels.title}</h1>
+      <h1 className="page-title">{t.hotels.title}</h1>
 
       <div className="card overflow-x-auto">
         <table className="table">
@@ -39,7 +40,7 @@ export default async function HotelsPage() {
             {(hotels ?? []).map((h) => (
               <tr key={h.id}>
                 <td>
-                  <Link href={`/admin/oteller/${h.id}`} className="font-medium text-teal-800 hover:underline">
+                  <Link href={`/admin/oteller/${h.id}`} className="font-medium text-blue hover:underline">
                     {h.name}
                   </Link>
                 </td>
@@ -54,7 +55,7 @@ export default async function HotelsPage() {
             ))}
             {!hotels?.length && (
               <tr>
-                <td colSpan={6} className="text-slate-500">
+                <td colSpan={6} className="text-muted">
                   {t.common.none}
                 </td>
               </tr>
@@ -68,7 +69,7 @@ export default async function HotelsPage() {
         <ActionForm action={createHotel} className="mt-4 space-y-4">
           <>
             <>
-              <HotelFields t={t} />
+              <HotelFields t={t} locale={locale} />
               <SubmitButton className="btn-primary">
                 {t.common.save}
               </SubmitButton>

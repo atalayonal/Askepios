@@ -29,7 +29,7 @@ export function ActionForm({
         </p>
       )}
       {state.message && (
-        <div role="status" className="mb-3 rounded-md bg-teal-50 px-3 py-2 text-sm text-teal-900">
+        <div role="status" className="mb-3 rounded-md bg-sky px-3 py-2 text-sm text-navy">
           <p>{state.message}</p>
           {state.password && <p className="mt-2 select-all font-mono text-base font-semibold tracking-wide">{state.password}</p>}
         </div>

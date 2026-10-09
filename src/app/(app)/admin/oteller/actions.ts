@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary } from "@/i18n/server";
-import { IMAGE_BUCKET } from "@/lib/images";
+import { IMAGE_BUCKET, isBundledImage } from "@/lib/images";
+import { cleanAmenities } from "@/lib/amenities";
 
 export type FormState = { error?: string; message?: string };
 
@@ -23,11 +24,13 @@ function hotelFields(fd: FormData) {
     website: optional(fd, "website"),
     description_tr: text(fd, "description_tr"),
     description_en: text(fd, "description_en"),
+    amenities: cleanAmenities(fd.getAll("amenities").map(String), "hotel"),
   };
 }
 
 function roomFields(fd: FormData) {
   const maxOccupancy = Number(text(fd, "max_occupancy"));
+  const size = Number(text(fd, "size_m2"));
   return {
     name_tr: text(fd, "name_tr"),
     name_en: text(fd, "name_en"),
@@ -35,6 +38,8 @@ function roomFields(fd: FormData) {
     description_en: text(fd, "description_en"),
     bed_info: text(fd, "bed_info"),
     max_occupancy: Number.isInteger(maxOccupancy) && maxOccupancy >= 1 && maxOccupancy <= 10 ? maxOccupancy : 3,
+    size_m2: Number.isInteger(size) && size >= 5 && size <= 500 ? size : null,
+    amenities: cleanAmenities(fd.getAll("amenities").map(String), "room"),
   };
 }
 
@@ -238,7 +243,7 @@ export async function deleteImage(imageId: string) {
   await requireAdmin();
   const ctx = await siblings(imageId);
   if (!ctx) return;
-  await ctx.supabase.storage.from(IMAGE_BUCKET).remove([ctx.image.storage_path]);
+  if (!isBundledImage(ctx.image.storage_path)) await ctx.supabase.storage.from(IMAGE_BUCKET).remove([ctx.image.storage_path]);
   await ctx.supabase.from("hotel_images").delete().eq("id", imageId);
   if (ctx.image.is_cover) {
     const next = ctx.all.find((i) => i.id !== imageId);

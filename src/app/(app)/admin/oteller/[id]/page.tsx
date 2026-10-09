@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getDictionary } from "@/i18n/server";
+import { getDictionary, getLocale } from "@/i18n/server";
 import { withSignedUrls } from "@/lib/images";
 import { ActionForm } from "@/components/action-form";
 import { SubmitButton } from "@/components/submit-button";
@@ -15,6 +15,7 @@ export default async function HotelDetailPage({ params }: PageProps<"/admin/otel
   await requireAdmin();
   const { id } = await params;
   const t = await getDictionary();
+  const locale = await getLocale();
   const supabase = await createClient();
 
   const { data: hotel } = await supabase.from("hotels").select("*").eq("id", id).maybeSingle();
@@ -31,11 +32,11 @@ export default async function HotelDetailPage({ params }: PageProps<"/admin/otel
 
   return (
     <div className="space-y-6">
-      <Link href="/admin/oteller" className="text-sm text-slate-500 hover:underline">
+      <Link href="/admin/oteller" className="back-link">
         ← {t.hotels.title}
       </Link>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold">{hotel.name}</h1>
+        <h1 className="page-title">{hotel.name}</h1>
         <StatusBadge active={hotel.is_active} labels={t.common} />
         <form action={setHotelActive.bind(null, hotel.id, !hotel.is_active)} className="ml-auto">
           <button type="submit" className="btn-secondary">
@@ -63,7 +64,7 @@ export default async function HotelDetailPage({ params }: PageProps<"/admin/otel
             {(rooms ?? []).map((r) => (
               <tr key={r.id}>
                 <td>
-                  <Link href={`/admin/oteller/${hotel.id}/odalar/${r.id}`} className="font-medium text-teal-800 hover:underline">
+                  <Link href={`/admin/oteller/${hotel.id}/odalar/${r.id}`} className="font-medium text-blue hover:underline">
                     {r.name_tr}
                   </Link>
                 </td>
@@ -76,11 +77,11 @@ export default async function HotelDetailPage({ params }: PageProps<"/admin/otel
           </tbody>
         </table>
         <details className="p-4">
-          <summary className="cursor-pointer text-sm font-medium text-teal-800">{t.hotels.newRoom}</summary>
+          <summary className="cursor-pointer text-sm font-medium text-blue">{t.hotels.newRoom}</summary>
           <ActionForm action={createRoomType.bind(null, hotel.id)} className="mt-4 space-y-4">
             <>
               <>
-                <RoomFields t={t} />
+                <RoomFields t={t} locale={locale} />
                 <SubmitButton className="btn-primary">
                   {t.common.save}
                 </SubmitButton>
@@ -95,7 +96,7 @@ export default async function HotelDetailPage({ params }: PageProps<"/admin/otel
           <ActionForm action={updateHotel.bind(null, hotel.id)} className="space-y-4">
             <>
               <>
-                <HotelFields t={t} defaults={hotel} />
+                <HotelFields t={t} locale={locale} defaults={hotel} />
                 <SubmitButton className="btn-primary">
                   {t.common.save}
                 </SubmitButton>
@@ -141,14 +142,14 @@ export default async function HotelDetailPage({ params }: PageProps<"/admin/otel
               <ul className="space-y-1 text-sm">
                 {clinics.map((c) => (
                   <li key={c.id}>
-                    <Link href={`/admin/klinikler/${c.id}`} className="text-teal-800 hover:underline">
+                    <Link href={`/admin/klinikler/${c.id}`} className="text-blue hover:underline">
                       {c.name}
                     </Link>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-slate-500">{t.common.none}</p>
+              <p className="text-sm text-muted">{t.common.none}</p>
             )}
           </section>
         </div>
