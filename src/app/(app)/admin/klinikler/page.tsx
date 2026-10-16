@@ -10,7 +10,7 @@ export default async function ClinicsPage() {
   const supabase = await createClient();
   const { data: clinics } = await supabase
     .from("clinics")
-    .select("id, name, contact_email, is_active, profiles(count)")
+    .select("id, name, code, contact_email, is_active, profiles(count)")
     .order("name");
 
   return (
@@ -27,6 +27,7 @@ export default async function ClinicsPage() {
           <thead>
             <tr>
               <th>{t.common.name}</th>
+              <th>{t.admin.clinicCode}</th>
               <th>{t.common.email}</th>
               <th>{t.admin.users}</th>
               <th>{t.common.status}</th>
@@ -40,6 +41,7 @@ export default async function ClinicsPage() {
                     {c.name}
                   </Link>
                 </td>
+                <td className="font-mono text-xs">{c.code}</td>
                 <td>{c.contact_email}</td>
                 <td>{(c.profiles as unknown as { count: number }[])[0]?.count ?? 0}</td>
                 <td>
@@ -49,7 +51,7 @@ export default async function ClinicsPage() {
             ))}
             {!clinics?.length && (
               <tr>
-                <td colSpan={4} className="text-muted">
+                <td colSpan={5} className="text-muted">
                   {t.common.none}
                 </td>
               </tr>

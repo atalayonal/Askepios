@@ -306,6 +306,39 @@ describe("başlangıç verisi", () => {
   });
 });
 
+describe("referans", () => {
+  it("referans kliniğin kodu ve kendi sıra numarasıdır; her klinik 0001'den başlar", async () => {
+    const clinic = await insertReturningId(db, "insert into clinics (name) values ('Lerra Clinic') returning id");
+    const user = await createUser(db, "lerra@klinik.test", "clinic_user", clinic);
+    await db.query("insert into clinic_hotel_access (clinic_id, hotel_id) values ($1, $2)", [clinic, ids.partnered]);
+
+    const first = await request(user, ids.room, "2030-10-20", "2030-10-21");
+    const second = await request(user, ids.room, "2030-10-22", "2030-10-23");
+    const { rows } = await db.query("select id, reference from reservations where id in ($1, $2)", [first, second]);
+    const byId = Object.fromEntries(rows.map((r) => [r.id, r.reference]));
+    expect(byId[first]).toBe("LERRA-0001");
+    expect(byId[second]).toBe("LERRA-0002");
+  });
+
+  it("klinik kodu adından türetilir, Türkçe harfler sadeleşir, çakışırsa numara eklenir", async () => {
+    const a = await db.query("insert into clinics (name) values ('Şifa Göz') returning code");
+    const b = await db.query("insert into clinics (name) values ('Şifa Ankara') returning code");
+    const c = await db.query("insert into clinics (name) values ('Dr. Öz Klinik') returning code");
+    const d = await db.query("insert into clinics (name, code) values ('Özel', 'oz1') returning code");
+    expect(a.rows[0].code).toBe("SIFA");
+    expect(b.rows[0].code).toBe("SIFA2");
+    expect(c.rows[0].code).toBe("DROZKL");
+    expect(d.rows[0].code).toBe("OZ1");
+  });
+
+  it("klinik kullanıcısı kliniğin kodunu ya da sayacını değiştiremez", async () => {
+    const result = await asUser(db, ids.userA, () =>
+      db.query("update clinics set code = 'XX', reservation_count = 0 where id = $1", [ids.clinicA]),
+    );
+    expect(result.rowCount).toBe(0);
+  });
+});
+
 describe("admin", () => {
   it("admin oturumuyla güncelleme yapılabilir ve updated_at yenilenir", async () => {
     const { rows } = await asUser(db, ids.admin, () =>

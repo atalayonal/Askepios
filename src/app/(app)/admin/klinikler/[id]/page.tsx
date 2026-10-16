@@ -18,7 +18,7 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
 
   const { data: clinic } = await supabase
     .from("clinics")
-    .select("id, name, contact_email, contact_phone, is_active")
+    .select("id, name, code, contact_email, contact_phone, is_active")
     .eq("id", id)
     .maybeSingle();
   if (!clinic) notFound();

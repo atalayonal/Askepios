@@ -3,6 +3,7 @@ import { CalendarDays, Hotel, Users } from "lucide-react";
 import type { Dictionary, Locale } from "@/i18n/dictionaries";
 import { formatDate, formatMoney } from "@/lib/format";
 import { nightsBetween } from "@/lib/summary";
+import { mainGuestLabel, type GuestRow } from "@/lib/reservation-guests";
 import { QuickDecision } from "./decision";
 
 export type PendingItem = {
@@ -17,6 +18,7 @@ export type PendingItem = {
   currency: string;
   created_at: string;
   clinic_name?: string;
+  reservation_guests?: GuestRow[] | null;
 };
 
 /** Admin panelinde karar bekleyen talep kartı: bilgiler ve doğrudan Onayla / Reddet. */
@@ -29,6 +31,7 @@ export function PendingCard({ r, t, locale }: { r: PendingItem; t: Dictionary; l
             {r.reference}
           </Link>
           <span className="text-sm font-semibold">{r.clinic_name}</span>
+          {r.reservation_guests?.length ? <span className="text-sm text-muted">· {mainGuestLabel(r.reservation_guests)}</span> : null}
         </div>
         <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-foreground/80">
           <li className="flex items-center gap-1.5">
