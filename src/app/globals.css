@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 /*
- * Askepios tasarım dili: lacivert üst bant, net mavi eylem rengi, beyaz kartlar.
+ * Asklepios tasarım dili: beyaz logo bandı, logonun koyu petrol mavisinde menü bandı, net mavi eylem rengi, beyaz kartlar.
  * Onay yeşil, ret kırmızı; yıldız ve vurgu için sıcak sarı.
  */
 :root {
   --background: #f3f5f9;
   --foreground: #13233a;
-  --navy: #0c2d57;
-  --navy-deep: #082040;
+  --navy: #0b4552;
+  --navy-deep: #073340;
   --blue: #1a5fd0;
   --blue-dark: #134ba8;
   --sky: #e7effc;

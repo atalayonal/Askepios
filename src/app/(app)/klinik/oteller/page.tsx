@@ -144,7 +144,7 @@ function HotelList({ hotels, t, locale }: { hotels: HotelCard[]; t: Dictionary; 
                 {h.partnered ? (
                   <span className="badge self-start bg-success-soft text-success sm:self-end">{t.ui.openToClinic}</span>
                 ) : (
-                  <span className="badge self-start bg-background text-muted sm:self-end">{t.ui.viaAskepios}</span>
+                  <span className="badge self-start bg-background text-muted sm:self-end">{t.ui.viaAsklepios}</span>
                 )}
                 <div>
                   {h.fromPrice ? (

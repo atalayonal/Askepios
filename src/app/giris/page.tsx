@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { getDictionary } from "@/i18n/server";
-import { LocaleSwitch } from "@/components/locale-switch";
+import { AuthShell } from "@/components/auth-shell";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage({ searchParams }: PageProps<"/giris">) {
@@ -7,18 +8,16 @@ export default async function LoginPage({ searchParams }: PageProps<"/giris">) {
   const { hesap } = await searchParams;
 
   return (
-    <main className="flex flex-1 items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-lg font-semibold">{t.appName}</h1>
-          <LocaleSwitch />
-        </div>
-        <div className="card p-6">
-          <h2 className="mb-4 text-base font-semibold">{t.auth.loginTitle}</h2>
-          <LoginForm t={t} notice={hesap === "pasif" ? t.auth.accountInactive : undefined} />
-        </div>
-        <p className="mt-4 text-center text-xs text-muted">{t.auth.closedSystemNote}</p>
+    <AuthShell footer={<p className="mt-4 text-center text-xs text-muted">{t.auth.closedSystemNote}</p>}>
+      <div className="card p-6">
+        <h2 className="mb-4 text-base font-semibold">{t.auth.loginTitle}</h2>
+        <LoginForm t={t} notice={hesap === "pasif" ? t.auth.accountInactive : undefined} />
+        <p className="mt-4 text-center text-sm">
+          <Link href="/sifremi-unuttum" className="text-blue hover:underline">
+            {t.auth.forgotLink}
+          </Link>
+        </p>
       </div>
-    </main>
+    </AuthShell>
   );
 }

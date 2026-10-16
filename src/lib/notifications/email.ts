@@ -4,12 +4,13 @@ import "server-only";
  * Resend ile e-posta gönderir. RESEND_API_KEY ya da gönderen adresi tanımlı değilse sessizce atlar;
  * bildirim gönderilemese de rezervasyon işlemi başarılı sayılır.
  * Kişisel sağlık bilgisi ya da misafir detayı e-postaya konmaz.
+ * E-posta gerçekten gönderildiyse true döner.
  */
-export async function sendEmail(to: string[], subject: string, text: string): Promise<void> {
+export async function sendEmail(to: string[], subject: string, text: string): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
   const recipients = to.filter(Boolean);
-  if (!apiKey || !from || recipients.length === 0) return;
+  if (!apiKey || !from || recipients.length === 0) return false;
 
   try {
     const response = await fetch("https://api.resend.com/emails", {
@@ -18,8 +19,10 @@ export async function sendEmail(to: string[], subject: string, text: string): Pr
       body: JSON.stringify({ from, to: recipients, subject, text }),
     });
     if (!response.ok) console.error("E-posta gönderilemedi", response.status, await response.text());
+    return response.ok;
   } catch (error) {
     console.error("E-posta gönderilemedi", error);
+    return false;
   }
 }
 

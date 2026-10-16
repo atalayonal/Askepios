@@ -1,4 +1,4 @@
-// Askepios yöneticisi oluşturur ya da mevcut kullanıcıyı yönetici yapar.
+// Asklepios yöneticisi oluşturur ya da mevcut kullanıcıyı yönetici yapar.
 // Kullanım: node --env-file=.env.local scripts/create-admin.mjs <e-posta> "<Ad Soyad>"
 // Geçici bir şifre üretir ve ekrana yazar; kullanıcı ilk girişte değiştirir.
 import { randomInt } from "node:crypto";

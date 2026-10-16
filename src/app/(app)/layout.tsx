@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getDictionary } from "@/i18n/server";
@@ -28,27 +29,34 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="bg-navy text-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 pt-4">
-          <Link href="/" className="text-xl font-extrabold tracking-tight">
-            Askepios
-            <span className="ml-2 align-middle text-sm font-medium text-white/60">{t.nav.tagline}</span>
-          </Link>
-          <div className="ml-auto flex items-center gap-3 text-sm">
-            <span className="hidden text-right leading-tight sm:block">
-              <span className="block font-semibold">{user.fullName || user.email}</span>
-              <span className="block text-xs text-white/70">{user.clinicName ?? t.nav.askepiosTeam}</span>
-            </span>
-            <LocaleSwitch />
-            <form action={logout}>
-              <button type="submit" className="rounded-md border border-white/30 px-3 py-1.5 text-sm font-medium hover:bg-white/10">
-                {t.nav.logout}
-              </button>
-            </form>
+      <header>
+        <div className="border-b border-line bg-white">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
+            <Link href="/" className="flex items-center gap-3">
+              <Image src="/logo.png" alt="Asklepios" width={794} height={132} priority className="h-7 w-auto sm:h-8" />
+              <span className="hidden text-sm font-medium text-muted sm:inline">{t.nav.tagline}</span>
+            </Link>
+            <div className="ml-auto flex items-center gap-3 text-sm">
+              <Link href="/hesabim" className="hidden rounded-md px-2 py-1 text-right leading-tight hover:bg-sky sm:block" title={t.account.title}>
+                <span className="block font-semibold">{user.fullName || user.email}</span>
+                <span className="block text-xs text-muted">{user.clinicName ?? t.nav.askepiosTeam}</span>
+              </Link>
+              <Link href="/hesabim" className="btn-secondary sm:hidden">
+                {t.account.title}
+              </Link>
+              <LocaleSwitch tone="light" />
+              <form action={logout}>
+                <button type="submit" className="btn-secondary">
+                  {t.nav.logout}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
-        <div className="mx-auto max-w-6xl px-4 pb-3 pt-4">
-          <NavLinks links={links} />
+        <div className="bg-navy text-white">
+          <div className="mx-auto max-w-6xl px-4 py-3">
+            <NavLinks links={links} />
+          </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>

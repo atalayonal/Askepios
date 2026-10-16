@@ -43,7 +43,7 @@ function summary(r: ReservationSummary): string {
   ].join("\n");
 }
 
-/** Yeni talep: Askepios yöneticilerine bildirim. */
+/** Yeni talep: Asklepios yöneticilerine bildirim. */
 export async function notifyNewReservation(id: string): Promise<void> {
   const r = await loadReservation(id);
   if (!r) return;

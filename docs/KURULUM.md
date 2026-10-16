@@ -11,7 +11,7 @@ Bu adımlar bir kez yapılır. Hepsi ücretsiz planlarla çalışır; canlıya �
 3. Depodaki [`supabase/kurulum.sql`](../supabase/kurulum.sql) dosyasının tamamını kopyalayıp yapıştırın → **Run**.
    "Success" görmelisiniz. Bu, bütün tabloları, güvenlik kurallarını ve 11 oteli kurar.
 4. **Authentication → Sign In / Providers** → **Allow new users to sign up** seçeneğini **kapatın**.
-   Sistem kapalıdır; kullanıcıları sadece Askepios oluşturur.
+   Sistem kapalıdır; kullanıcıları sadece Asklepios oluşturur.
 
 ## 2. İlk yönetici hesabı
 
@@ -25,7 +25,7 @@ insert into public.profiles (id, full_name, role, must_change_password)
 values ('BURAYA-UID', 'Ad Soyad', 'admin', false);
 ```
 
-Diğer yöneticiler aynı şekilde eklenir. Klinik kullanıcıları ise uygulamanın içinden, **Klinikler** sayfasından oluşturulur.
+Diğer yöneticiler aynı şekilde eklenir. Klinik kullanıcıları ise uygulamanın içinden, **Klinikler → Yeni klinik ekle** sayfasından oluşturulur (bkz. 5. bölüm).
 
 ## 3. Vercel
 
@@ -37,19 +37,35 @@ Diğer yöneticiler aynı şekilde eklenir. Klinik kullanıcıları ise uygulama
 | `NEXT_PUBLIC_SUPABASE_URL` | Project URL, `https://xxxx.supabase.co` biçiminde. Supabase'de üstteki **Connect** düğmesinde ya da **Project Settings → Data API** sayfasında yazar. Bulamazsanız **Project Settings → General**'daki **Project ID**'yi `https://PROJECT-ID.supabase.co` içine koyun. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Publishable** anahtar (eski adıyla `anon public`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secret** anahtar (eski adıyla `service_role`). Gizlidir; başka hiçbir yere yazmayın. |
-| `ASKEPIOS_CONTACT_EMAIL` | Kliniklerin yazacağı Askepios e-postası |
-| `ASKEPIOS_CONTACT_WHATSAPP` | Askepios WhatsApp numarası, ülke koduyla sadece rakam (`905xxxxxxxxx`) |
+| `ASKEPIOS_CONTACT_EMAIL` | Kliniklerin yazacağı Asklepios e-postası |
+| `ASKEPIOS_CONTACT_WHATSAPP` | Asklepios WhatsApp numarası, ülke koduyla sadece rakam (`905xxxxxxxxx`) |
 
 3. **Deploy**. Birkaç dakika sonra `askepios-xxxx.vercel.app` gibi bir adres verilir.
 4. Supabase → **Authentication → URL Configuration** → **Site URL** alanına bu adresi yazın.
 
-## 4. E-posta bildirimleri (isteğe bağlı, alan adı alındıktan sonra)
+## 4. E-posta (rezervasyon bildirimleri ve şifre bağlantıları)
 
 1. [resend.com](https://resend.com) hesabı açın, alan adınızı (`askepios.com`) doğrulayın.
-2. Vercel'e şunları ekleyin: `RESEND_API_KEY`, `EMAIL_FROM` (ör. `Askepios <bildirim@askepios.com>`),
-   `ADMIN_NOTIFY_EMAILS` (virgülle ayrılmış yönetici adresleri), `APP_URL` (sitenin adresi).
+2. Vercel'e şunları ekleyin: `RESEND_API_KEY`, `EMAIL_FROM` (ör. `Asklepios <bildirim@askepios.com>`),
+   `ADMIN_NOTIFY_EMAILS` (virgülle ayrılmış yönetici adresleri), `APP_URL` (sitenin adresi, ör. `https://askepios.vercel.app`).
 
-Bu değişkenler yoksa sistem e-posta göndermeden çalışmaya devam eder.
+Bu değişkenler yoksa sistem e-posta göndermeden çalışmaya devam eder. `APP_URL` e-postalardaki bağlantıların
+adresidir; e-posta kurulmamış olsa da tanımlanmalıdır, yoksa bağlantılar Vercel'in geçici dağıtım adresine gider.
+
+## 5. Klinik kullanıcıları ve şifreler
+
+- Yönetici **Klinikler → Yeni klinik ekle** sayfasında klinik bilgilerini ve giriş yapacak kişinin e-postasını girer.
+  Kullanıcı adı yerine e-posta kullanılır. Şifreyi yönetici belirlemez.
+- Kayıtta kullanıcıya tek kullanımlık bir **şifre belirleme bağlantısı** gider. Kullanıcı bağlantıyı açar,
+  **Devam et**'e basar ve kendi şifresini belirler. Düz şifre hiçbir yere yazılmaz ve e-postayla yollanmaz.
+- E-posta kurulu değilse ya da gönderilemezse bağlantı yöneticiye ekranda gösterilir; **Kopyala** ile alıp
+  kullanıcıya WhatsApp ya da e-postayla iletebilir. Klinik sayfasındaki **Şifre bağlantısı gönder** yeni bağlantı üretir.
+- Giriş sayfasında **Şifremi unuttum**, giriş yaptıktan sonra sağ üstteki isimden açılan **Hesabım** sayfasında
+  **Şifre değiştir** bölümü vardır.
+- E-postalar Supabase'in kendi e-posta servisinden değil Resend'den gider; Supabase'de SMTP ya da e-posta şablonu
+  ayarı gerekmez.
+- Bağlantının geçerlilik süresi Supabase → **Authentication → Sign In / Providers → Email → Email OTP Expiration**
+  ayarıdır (varsayılan 1 saat). Bağlantıyı WhatsApp'tan ileteceksiniz bunu **86400** (24 saat) yapmanız önerilir.
 
 ## Şema değişince
 

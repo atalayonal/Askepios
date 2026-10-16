@@ -2,10 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary } from "@/i18n/server";
-import { ActionForm } from "@/components/action-form";
-import { SubmitButton } from "@/components/submit-button";
-import { createClinic } from "./actions";
-import { ClinicFields, StatusBadge } from "./components";
+import { StatusBadge } from "./components";
 
 export default async function ClinicsPage() {
   await requireAdmin();
@@ -18,7 +15,12 @@ export default async function ClinicsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="page-title">{t.admin.clinicsTitle}</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="page-title">{t.admin.clinicsTitle}</h1>
+        <Link href="/admin/klinikler/yeni" className="btn-primary ml-auto">
+          + {t.admin.addClinic}
+        </Link>
+      </div>
 
       <div className="card overflow-x-auto">
         <table className="table">
@@ -54,20 +56,6 @@ export default async function ClinicsPage() {
             )}
           </tbody>
         </table>
-      </div>
-
-      <div className="card max-w-xl p-6">
-        <h2 className="mb-4 font-semibold">{t.admin.newClinic}</h2>
-        <ActionForm action={createClinic} className="space-y-3">
-          <>
-            <>
-              <ClinicFields t={t} />
-              <SubmitButton className="btn-primary">
-                {t.common.save}
-              </SubmitButton>
-            </>
-          </>
-        </ActionForm>
       </div>
     </div>
   );

@@ -104,7 +104,7 @@ export default async function ClinicHotelPage({ params, searchParams }: PageProp
               {t.clinic.reserve}
             </a>
           ) : (
-            <span className="badge bg-background py-1.5 text-muted">{t.ui.viaAskepios}</span>
+            <span className="badge bg-background py-1.5 text-muted">{t.ui.viaAsklepios}</span>
           )}
         </div>
       </div>
@@ -156,7 +156,7 @@ export default async function ClinicHotelPage({ params, searchParams }: PageProp
               </>
             ) : (
               <div className="p-5">
-                <h2 className="text-lg font-bold">{t.clinic.contactAskepios}</h2>
+                <h2 className="text-lg font-bold">{t.clinic.contactAsklepios}</h2>
                 <p className="mt-2 text-sm text-muted">{t.clinic.notPartneredNote}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {contactEmail && (

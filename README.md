@@ -1,6 +1,6 @@
-# Askepios Rezervasyon
+# Asklepios Rezervasyon
 
-Askepios'un kliniklere otel ve oda sunduğu, kliniklerin rezervasyon talebi oluşturduğu kapalı web sistemi.
+Asklepios'un kliniklere otel ve oda sunduğu, kliniklerin rezervasyon talebi oluşturduğu kapalı web sistemi.
 
 ## Yapı
 
@@ -53,8 +53,8 @@ npm run build
 
 ## Kullanıcılar
 
-- Açık kayıt yoktur. Klinik kullanıcılarını admin, **Klinikler** sayfasından oluşturur; sistem geçici bir şifre üretir ve bir kez gösterir. Kullanıcı ilk girişte kendi şifresini belirler.
-- İlk Askepios yöneticisi [docs/KURULUM.md](docs/KURULUM.md) adımlarıyla ya da komut satırından oluşturulur:
+- Açık kayıt yoktur. Klinikleri ve kullanıcılarını admin, **Klinikler → Yeni klinik ekle** sayfasından oluşturur. Kullanıcıya e-postayla tek kullanımlık bir şifre belirleme bağlantısı gider (e-posta kurulu değilse bağlantı admine gösterilir); şifreyi kullanıcı kendisi belirler. Giriş sayfasında "Şifremi unuttum", "Hesabım" sayfasında "Şifre değiştir" vardır. Ayrıntı: [docs/KURULUM.md](docs/KURULUM.md#5-klinik-kullanıcıları-ve-şifreler).
+- İlk Asklepios yöneticisi [docs/KURULUM.md](docs/KURULUM.md) adımlarıyla ya da komut satırından oluşturulur:
 
 ```bash
 node --env-file=.env.local scripts/create-admin.mjs ad@askepios.com "Ad Soyad"
