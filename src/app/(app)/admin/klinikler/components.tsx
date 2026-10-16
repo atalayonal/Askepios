@@ -5,13 +5,25 @@ export function ClinicFields({
   defaults,
 }: {
   t: Dictionary;
-  defaults?: { name: string; contact_email: string | null; contact_phone: string | null };
+  defaults?: { name: string; code: string; contact_email: string | null; contact_phone: string | null };
 }) {
   return (
     <>
       <label className="block">
         <span className="text-sm font-medium">{t.admin.clinicName}</span>
         <input name="name" required defaultValue={defaults?.name} className="input mt-1" />
+      </label>
+      <label className="block">
+        <span className="text-sm font-medium">{t.admin.clinicCode}</span>
+        <input
+          name="code"
+          defaultValue={defaults?.code}
+          maxLength={10}
+          pattern="[A-Za-z0-9]{2,10}"
+          placeholder={defaults ? undefined : "LERRA"}
+          className="input mt-1 uppercase"
+        />
+        <span className="mt-1 block text-xs text-muted">{defaults ? t.admin.clinicCodeEditHint : t.admin.clinicCodeHint}</span>
       </label>
       <label className="block">
         <span className="text-sm font-medium">{t.admin.contactEmail}</span>

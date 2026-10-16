@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary, getLocale } from "@/i18n/server";
 import { ReservationTable } from "@/components/reservation-table";
+import { GUEST_COLUMNS } from "@/lib/reservation-guests";
+import { reservationSearchFilter } from "@/lib/reservation-search";
 
 const STATUSES = ["PENDING", "CONFIRMED", "REJECTED", "CANCELLED"];
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -24,7 +26,7 @@ export default async function AdminReservationsPage({ searchParams }: PageProps<
   const supabase = await createClient();
   let query = supabase
     .from("reservations")
-    .select("id, reference, hotel_name, room_name, check_in, check_out, guest_count, total_price, currency, status, clinics(name)")
+    .select(`id, reference, hotel_name, room_name, check_in, check_out, guest_count, total_price, currency, status, clinics(name), ${GUEST_COLUMNS}`)
     .order("created_at", { ascending: false })
     .limit(200);
   if (status) query = query.eq("status", status);
@@ -32,19 +34,7 @@ export default async function AdminReservationsPage({ searchParams }: PageProps<
   if (hotel) query = query.eq("hotel_id", hotel);
   if (from) query = query.gte("check_in", from);
   if (to) query = query.lte("check_in", to);
-  if (q) {
-    // Referansla ya da misafir adıyla arama.
-    const { data: guestMatches } = await supabase
-      .from("reservation_guests")
-      .select("reservation_id")
-      .ilike("full_name", `%${q.replace(/[%_]/g, "")}%`)
-      .limit(200);
-    const ids = [...new Set((guestMatches ?? []).map((g) => g.reservation_id as string))];
-    const reference = q.replace(/[^A-Za-z0-9-]/g, "");
-    query = ids.length
-      ? query.or(`reference.ilike.%${reference}%,id.in.(${ids.join(",")})`)
-      : query.ilike("reference", `%${reference}%`);
-  }
+  if (q) query = query.or(await reservationSearchFilter(supabase, q));
 
   const [{ data: reservations }, { data: clinics }, { data: hotels }] = await Promise.all([
     query,

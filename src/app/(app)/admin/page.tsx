@@ -3,12 +3,13 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary, getLocale } from "@/i18n/server";
 import { toIso } from "@/lib/dates";
+import { GUEST_COLUMNS } from "@/lib/reservation-guests";
 import { fetchMonthReservations } from "@/lib/summary-data";
 import { ReservationTable } from "@/components/reservation-table";
 import { PendingCard } from "@/components/pending-card";
 import { SummaryTiles, monthLabel } from "@/components/monthly-summary";
 
-const COLUMNS = "id, reference, hotel_name, room_name, check_in, check_out, guest_count, total_price, currency, status, created_at, clinics(name)";
+const COLUMNS = `id, reference, hotel_name, room_name, check_in, check_out, guest_count, total_price, currency, status, created_at, clinics(name), ${GUEST_COLUMNS}`;
 
 export default async function AdminDashboard() {
   await requireAdmin();

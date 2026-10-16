@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Dictionary, Locale } from "@/i18n/dictionaries";
 import { formatDate, formatMoney } from "@/lib/format";
+import { mainGuestLabel, type GuestRow } from "@/lib/reservation-guests";
 import { ReservationStatus } from "./reservation-status";
 import { QuickDecision } from "./decision";
 
@@ -16,6 +17,7 @@ export type ReservationListItem = {
   currency: string;
   status: string;
   clinic_name?: string;
+  reservation_guests?: GuestRow[] | null;
 };
 
 export function ReservationTable({
@@ -57,6 +59,7 @@ export function ReservationTable({
                 <Link href={`${hrefBase}/${r.id}`} className="font-semibold text-blue hover:underline">
                   {r.reference}
                 </Link>
+                {r.reservation_guests?.length ? <div className="text-xs text-muted">{mainGuestLabel(r.reservation_guests)}</div> : null}
               </td>
               {showClinic && <td>{r.clinic_name}</td>}
               <td>

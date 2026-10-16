@@ -10,7 +10,24 @@ import { sendPasswordLink } from "@/lib/password-links";
 export type FormState = { error?: string; message?: string; link?: string };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const CODE_RE = /^[A-Z0-9]{2,10}$/;
 const text = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
+
+/** Klinik formundaki alanlar; kod boşsa veritabanı addan türetir. Kod geçersizse null döner. */
+function clinicValues(formData: FormData) {
+  const code = text(formData, "code").toUpperCase();
+  if (code && !CODE_RE.test(code)) return null;
+  return {
+    name: text(formData, "name"),
+    code: code || null,
+    contact_email: text(formData, "contact_email") || null,
+    contact_phone: text(formData, "contact_phone") || null,
+  };
+}
+
+/** Benzersizlik ihlali (aynı klinik kodu) ayrı mesajla gösterilir. */
+const codeError = (code: string | undefined, t: Awaited<ReturnType<typeof getDictionary>>) =>
+  code === "23505" ? t.admin.clinicCodeTaken : t.common.unexpectedError;
 
 export type NewClinicState = FormState & { clinicId?: string };
 
@@ -18,19 +35,16 @@ export type NewClinicState = FormState & { clinicId?: string };
 export async function createClinic(_prev: NewClinicState, formData: FormData): Promise<NewClinicState> {
   await requireAdmin();
   const t = await getDictionary();
-  const name = text(formData, "name");
+  const values = clinicValues(formData);
   const fullName = text(formData, "full_name");
   const email = text(formData, "email").toLowerCase();
-  if (!name || !fullName) return { error: t.admin.nameRequired };
+  if (!values) return { error: t.admin.clinicCodeInvalid };
+  if (!values.name || !fullName) return { error: t.admin.nameRequired };
   if (!EMAIL_RE.test(email)) return { error: t.admin.invalidEmail };
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("clinics")
-    .insert({ name, contact_email: text(formData, "contact_email") || null, contact_phone: text(formData, "contact_phone") || null })
-    .select("id")
-    .single();
-  if (error) return { error: t.common.unexpectedError };
+  const { data, error } = await supabase.from("clinics").insert(values).select("id").single();
+  if (error) return { error: codeError(error.code, t) };
 
   const result = await inviteClinicUser(data.id, fullName, email);
   if (result.error) {
@@ -77,15 +91,13 @@ function linkResult(result: Awaited<ReturnType<typeof sendPasswordLink>>, sent: 
 export async function updateClinic(clinicId: string, _prev: FormState, formData: FormData): Promise<FormState> {
   await requireAdmin();
   const t = await getDictionary();
-  const name = text(formData, "name");
-  if (!name) return { error: t.admin.nameRequired };
+  const values = clinicValues(formData);
+  if (!values) return { error: t.admin.clinicCodeInvalid };
+  if (!values.name) return { error: t.admin.nameRequired };
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("clinics")
-    .update({ name, contact_email: text(formData, "contact_email") || null, contact_phone: text(formData, "contact_phone") || null })
-    .eq("id", clinicId);
-  if (error) return { error: t.common.unexpectedError };
+  const { error } = await supabase.from("clinics").update(values).eq("id", clinicId);
+  if (error) return { error: codeError(error.code, t) };
 
   revalidatePath(`/admin/klinikler/${clinicId}`);
   return { message: t.common.saved };
