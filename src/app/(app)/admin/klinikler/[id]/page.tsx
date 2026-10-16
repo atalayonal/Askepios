@@ -2,11 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getDictionary } from "@/i18n/server";
 import { ActionForm } from "@/components/action-form";
 import { SubmitButton } from "@/components/submit-button";
 import { ClinicFields, StatusBadge } from "../components";
-import { createClinicUser, resetUserPassword, setClinicActive, setUserActive, updateClinic } from "../actions";
+import { createClinicUser, sendUserPasswordLink, setClinicActive, setUserActive, updateClinic } from "../actions";
 import { setClinicHotelAccess } from "../../oteller/actions";
 
 export default async function ClinicDetailPage({ params }: PageProps<"/admin/klinikler/[id]">) {
@@ -27,6 +28,16 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
     .select("id, full_name, is_active, must_change_password")
     .eq("clinic_id", id)
     .order("full_name");
+
+  // Giriş e-postaları auth.users'ta durur; sadece bu kliniğin kullanıcıları okunur.
+  const admin = createAdminClient();
+  const emails = new Map<string, string>();
+  await Promise.all(
+    (users ?? []).map(async (u) => {
+      const { data } = await admin.auth.admin.getUserById(u.id);
+      if (data.user?.email) emails.set(u.id, data.user.email);
+    }),
+  );
 
   const [{ data: hotels }, { data: access }] = await Promise.all([
     supabase.from("hotels").select("id, name, is_active").order("name"),
@@ -66,8 +77,9 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
         </div>
 
         <div className="card p-6">
-          <h2 className="mb-4 font-semibold">{t.admin.newUser}</h2>
-          <ActionForm action={createClinicUser.bind(null, clinic.id)} className="space-y-3" resetOnSuccess>
+          <h2 className="font-semibold">{t.admin.newUser}</h2>
+          <p className="mb-4 mt-1 text-sm text-muted">{t.admin.clinicLoginIntro}</p>
+          <ActionForm action={createClinicUser.bind(null, clinic.id)} className="space-y-3" resetOnSuccess copyLabels={{ copy: t.admin.copy, copied: t.admin.copied }}>
             <>
               <>
                 <label className="block">
@@ -75,8 +87,8 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
                   <input name="full_name" required className="input mt-1" />
                 </label>
                 <label className="block">
-                  <span className="text-sm font-medium">{t.common.email}</span>
-                  <input name="email" type="email" required className="input mt-1" />
+                  <span className="text-sm font-medium">{t.admin.loginEmail}</span>
+                  <input name="email" type="email" required autoComplete="off" className="input mt-1" />
                 </label>
                 <SubmitButton className="btn-primary">
                   {t.common.save}
@@ -115,6 +127,7 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
           <thead>
             <tr>
               <th>{t.admin.fullName}</th>
+              <th>{t.admin.loginEmail}</th>
               <th>{t.common.status}</th>
               <th>{t.common.actions}</th>
             </tr>
@@ -123,16 +136,17 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
             {(users ?? []).map((u) => (
               <tr key={u.id}>
                 <td>{u.full_name}</td>
+                <td>{emails.get(u.id) ?? ""}</td>
                 <td className="space-x-2">
                   <StatusBadge active={u.is_active} labels={t.common} />
                   {u.must_change_password && <span className="badge bg-amber-50 text-amber-800">{t.admin.mustChangePassword}</span>}
                 </td>
                 <td>
                   <div className="flex flex-wrap items-start gap-2">
-                    <ActionForm action={resetUserPassword.bind(null, u.id, clinic.id)}>
+                    <ActionForm action={sendUserPasswordLink.bind(null, u.id, clinic.id)} copyLabels={{ copy: t.admin.copy, copied: t.admin.copied }}>
                       <>
                         <SubmitButton className="btn-secondary">
-                          {t.admin.resetPassword}
+                          {t.admin.sendPasswordLink}
                         </SubmitButton>
                       </>
                     </ActionForm>
@@ -147,7 +161,7 @@ export default async function ClinicDetailPage({ params }: PageProps<"/admin/kli
             ))}
             {!users?.length && (
               <tr>
-                <td colSpan={3} className="text-muted">
+                <td colSpan={4} className="text-muted">
                   {t.common.none}
                 </td>
               </tr>

@@ -2,9 +2,10 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Giriş yapmadan açılabilen sayfalar.
-const PUBLIC_PATHS = ["/giris"];
+const PUBLIC_PATHS = ["/giris", "/sifremi-unuttum"];
 // Oturum durumundan bağımsız açılan adresler.
-const ALWAYS_ALLOWED = ["/oturum-kapat"];
+// Şifre bağlantısı, başka bir hesapla oturum açıkken de kullanılabilmeli.
+const ALWAYS_ALLOWED = ["/oturum-kapat", "/hesap-onayla"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -57,5 +58,5 @@ function redirectWithCookies(url: URL, from: NextResponse) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|logo.png|robots.txt).*)"],
 };

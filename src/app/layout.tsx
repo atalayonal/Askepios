@@ -8,8 +8,8 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Askepios Rezervasyon",
-  description: "Askepios klinik otel rezervasyon sistemi",
+  title: "Asklepios Rezervasyon",
+  description: "Asklepios klinik otel rezervasyon sistemi",
   robots: { index: false, follow: false },
 };
 
