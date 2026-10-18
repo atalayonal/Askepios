@@ -75,7 +75,8 @@ export async function withdrawRequest(reservationId: string, _prev: ChangeState,
   });
   if (error) return { error: t.changes.errors[error.message] ?? t.common.unexpectedError };
 
-  after(() => notifyChangeRequest(reservationId, "WITHDRAWN"));
+  const note = String(fd.get("note") ?? "");
+  after(() => notifyChangeRequest(reservationId, "WITHDRAWN", note));
   revalidatePath(`/klinik/rezervasyonlar/${reservationId}`);
   return { message: t.changes.withdrawn };
 }
@@ -93,7 +94,8 @@ export async function requestChange(reservationId: string, _prev: ChangeState, f
   });
   if (error) return { error: t.changes.errors[error.message] ?? t.common.unexpectedError };
 
-  after(() => notifyChangeRequest(reservationId, kind));
+  const message = String(fd.get("message") ?? "");
+  after(() => notifyChangeRequest(reservationId, kind, message));
   revalidatePath(`/klinik/rezervasyonlar/${reservationId}`);
   return { message: t.changes.sent };
 }
