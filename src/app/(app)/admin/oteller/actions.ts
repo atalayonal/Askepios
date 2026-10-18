@@ -55,7 +55,12 @@ export async function createHotel(_prev: FormState, fd: FormData): Promise<FormS
   if (!fields.name) return { error: t.admin.nameRequired };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.from("hotels").insert(fields).select("id").single();
+  // Yeni otel pasif başlar: fotoğraf, oda ve fiyatlar girilmeden klinikler görmesin. Kurulum adımları sayfada görünür.
+  const { data, error } = await supabase
+    .from("hotels")
+    .insert({ ...fields, is_active: false })
+    .select("id")
+    .single();
   if (error) return { error: t.common.unexpectedError };
   await supabase.from("hotel_contacts").insert({ hotel_id: data.id });
 
@@ -144,34 +149,72 @@ export async function setRoomActive(roomId: string, hotelId: string, isActive: b
 
 // ---------------------------------------------------------------- fiyatlar
 
-export async function createRate(roomId: string, hotelId: string, _prev: FormState, fd: FormData): Promise<FormState> {
-  await requireAdmin();
-  const t = await getDictionary();
-  const occupancy = Number(text(fd, "occupancy"));
-  const price = Number(text(fd, "price").replace(",", "."));
+function ratePeriod(fd: FormData, t: Awaited<ReturnType<typeof getDictionary>>) {
   const validFrom = text(fd, "valid_from");
   const validTo = text(fd, "valid_to");
-  const currency = text(fd, "currency").toUpperCase() || "EUR";
+  if (!validFrom || !validTo || validTo < validFrom) return { error: t.hotels.invalidPeriod };
+  return { validFrom, validTo, currency: text(fd, "currency").toUpperCase() || "EUR" };
+}
+
+const parsePrice = (raw: string) => (raw ? Number(raw.replace(/\s/g, "").replace(",", ".")) : null);
+
+/** Bir dönem için her kişi sayısının fiyatını tek seferde ekler; boş bırakılan kişi sayıları atlanır. */
+export async function createRates(roomId: string, hotelId: string, _prev: FormState, fd: FormData): Promise<FormState> {
+  await requireAdmin();
+  const t = await getDictionary();
+  const period = ratePeriod(fd, t);
+  if ("error" in period) return period;
   const clinicId = optional(fd, "clinic_id");
 
-  if (!Number.isFinite(price) || price < 0) return { error: t.hotels.invalidPrice };
-  if (!validFrom || !validTo || validTo < validFrom) return { error: t.hotels.invalidPeriod };
+  const rows = [];
+  for (let occupancy = 1; occupancy <= 10; occupancy++) {
+    const price = parsePrice(text(fd, `price_${occupancy}`));
+    if (price === null) continue;
+    if (!Number.isFinite(price) || price < 0) return { error: t.hotels.invalidPrice };
+    rows.push({
+      room_type_id: roomId,
+      clinic_id: clinicId,
+      occupancy,
+      price,
+      currency: period.currency,
+      valid_from: period.validFrom,
+      valid_to: period.validTo,
+    });
+  }
+  if (!rows.length) return { error: t.hotels.priceRequired };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("room_rates").insert({
-    room_type_id: roomId,
-    clinic_id: clinicId,
-    occupancy,
-    price,
-    currency,
-    valid_from: validFrom,
-    valid_to: validTo,
-  });
+  const { error } = await supabase.from("room_rates").insert(rows);
   if (error) {
     return { error: error.code === "23P01" ? t.hotels.rateOverlap : t.common.unexpectedError };
   }
 
   revalidatePath(`/admin/oteller/${hotelId}/odalar/${roomId}`);
+  revalidatePath(`/admin/oteller/${hotelId}`);
+  return { message: t.common.saved };
+}
+
+/** Mevcut bir fiyat döneminin tarihlerini ve fiyatını değiştirir. */
+export async function updateRate(rateId: string, roomId: string, hotelId: string, _prev: FormState, fd: FormData): Promise<FormState> {
+  await requireAdmin();
+  const t = await getDictionary();
+  const period = ratePeriod(fd, t);
+  if ("error" in period) return period;
+  const price = parsePrice(text(fd, "price"));
+  if (price === null || !Number.isFinite(price) || price < 0) return { error: t.hotels.invalidPrice };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("room_rates")
+    .update({ price, currency: period.currency, valid_from: period.validFrom, valid_to: period.validTo })
+    .eq("id", rateId)
+    .eq("room_type_id", roomId);
+  if (error) {
+    return { error: error.code === "23P01" ? t.hotels.rateOverlap : t.common.unexpectedError };
+  }
+
+  revalidatePath(`/admin/oteller/${hotelId}/odalar/${roomId}`);
+  revalidatePath(`/admin/oteller/${hotelId}`);
   return { message: t.common.saved };
 }
 
@@ -180,6 +223,7 @@ export async function deleteRate(rateId: string, roomId: string, hotelId: string
   const supabase = await createClient();
   await supabase.from("room_rates").delete().eq("id", rateId).eq("room_type_id", roomId);
   revalidatePath(`/admin/oteller/${hotelId}/odalar/${roomId}`);
+  revalidatePath(`/admin/oteller/${hotelId}`);
 }
 
 // ---------------------------------------------------------------- görseller
@@ -224,7 +268,13 @@ export async function setCoverImage(imageId: string) {
   await requireAdmin();
   const ctx = await siblings(imageId);
   if (!ctx) return;
-  await ctx.supabase.from("hotel_images").update({ is_cover: false }).in("id", ctx.all.map((i) => i.id));
+  await ctx.supabase
+    .from("hotel_images")
+    .update({ is_cover: false })
+    .in(
+      "id",
+      ctx.all.map((i) => i.id),
+    );
   await ctx.supabase.from("hotel_images").update({ is_cover: true }).eq("id", imageId);
   revalidatePath(imagesPath(ctx.image.hotel_id, ctx.image.room_type_id));
 }
