@@ -5,6 +5,7 @@ import { getDictionary, getLocale } from "@/i18n/server";
 import { ReservationTable } from "@/components/reservation-table";
 import { GUEST_COLUMNS } from "@/lib/reservation-guests";
 import { reservationSearchFilter } from "@/lib/reservation-search";
+import { PAGE_SIZE, Pagination, pageFromParam } from "@/components/pagination";
 
 const STATUSES = ["PENDING", "CONFIRMED", "REJECTED", "CANCELLED"];
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -22,13 +23,15 @@ export default async function AdminReservationsPage({ searchParams }: PageProps<
   const from = ISO_DATE.test(get("baslangic")) ? get("baslangic") : "";
   const to = ISO_DATE.test(get("bitis")) ? get("bitis") : "";
   const q = get("ara").slice(0, 100);
+  const page = pageFromParam(get("sayfa"));
 
   const supabase = await createClient();
   let query = supabase
     .from("reservations")
     .select(`id, reference, hotel_name, room_name, check_in, check_out, guest_count, total_price, currency, status, clinics(name), ${GUEST_COLUMNS}`)
     .order("created_at", { ascending: false })
-    .limit(200);
+    // Bir fazlası istenir: dönerse sonraki sayfa vardır.
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   if (status) query = query.eq("status", status);
   if (clinic) query = query.eq("clinic_id", clinic);
   if (hotel) query = query.eq("hotel_id", hotel);
@@ -42,7 +45,7 @@ export default async function AdminReservationsPage({ searchParams }: PageProps<
     supabase.from("hotels").select("id, name").order("name"),
   ]);
 
-  const items = (reservations ?? []).map((r) => ({ ...r, clinic_name: (r.clinics as unknown as { name: string } | null)?.name }));
+  const items = (reservations ?? []).slice(0, PAGE_SIZE).map((r) => ({ ...r, clinic_name: (r.clinics as unknown as { name: string } | null)?.name }));
 
   return (
     <div className="space-y-4">
@@ -88,6 +91,16 @@ export default async function AdminReservationsPage({ searchParams }: PageProps<
 
       <div className="card overflow-hidden">
         <ReservationTable items={items} hrefBase="/admin/rezervasyonlar" t={t} locale={locale} showClinic decide />
+        <Pagination
+          page={page}
+          hasNext={(reservations?.length ?? 0) > PAGE_SIZE}
+          href={(p) => {
+            const filters = new URLSearchParams({ ara: q, durum: status, klinik: clinic, otel: hotel, baslangic: from, bitis: to, sayfa: String(p) });
+            for (const [key, value] of [...filters]) if (!value || (key === "sayfa" && value === "1")) filters.delete(key);
+            return `/admin/rezervasyonlar?${filters}`;
+          }}
+          t={t}
+        />
       </div>
     </div>
   );

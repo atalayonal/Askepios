@@ -21,6 +21,13 @@ export function DecisionPanel({ reservationId, status, t }: { reservationId: str
             <span className="text-sm font-medium">{t.reservations.statusNote}</span>
             <textarea name="note" rows={2} className="input mt-1" placeholder={t.ui.notePlaceholder} />
           </label>
+          {pending && (
+            <label className="block">
+              <span className="text-sm font-medium">{t.voucher.hotelConfirmationNo}</span>
+              <input name="hotel_confirmation_no" maxLength={60} className="input mt-1 sm:w-64" />
+              <span className="mt-1 block text-xs text-muted">{t.voucher.hotelConfirmationHint}</span>
+            </label>
+          )}
           <div className="flex flex-wrap gap-3">
             {pending && (
               <>

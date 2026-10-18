@@ -149,6 +149,8 @@ export default async function ClinicHotelPage({ params, searchParams }: PageProp
                     rooms={(rooms ?? []).map((r) => ({ id: r.id, name: pick(r.name_tr, r.name_en), maxOccupancy: r.max_occupancy }))}
                     initialRoomId={selectedRoom}
                     t={t.clinic}
+                    kvkk={t.kvkk}
+                    transfer={t.transfer}
                     locale={locale}
                     today={today}
                   />

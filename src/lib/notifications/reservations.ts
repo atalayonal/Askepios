@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { adminNotificationEmails, appUrl, sendEmail } from "./email";
+import { TRANSFER_LEGS, formatTransferTime, type Transfer } from "@/lib/transfer";
 
 const STATUS_TR: Record<string, string> = {
   PENDING: "Beklemede",
@@ -19,6 +20,7 @@ type ReservationSummary = {
   guest_count: number;
   status: string;
   created_by: string;
+  transfer: Transfer | null;
   clinics: { name: string; contact_email: string | null } | null;
 };
 
@@ -26,7 +28,7 @@ async function loadReservation(id: string): Promise<ReservationSummary | null> {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
   const { data } = await createAdminClient()
     .from("reservations")
-    .select("id, reference, hotel_name, room_name, check_in, check_out, guest_count, status, created_by, clinics(name, contact_email)")
+    .select("id, reference, hotel_name, room_name, check_in, check_out, guest_count, status, created_by, transfer, clinics(name, contact_email)")
     .eq("id", id)
     .maybeSingle();
   return data as unknown as ReservationSummary | null;
@@ -40,6 +42,10 @@ function summary(r: ReservationSummary): string {
     `Tarihler: ${r.check_in} → ${r.check_out}`,
     `Misafir sayısı: ${r.guest_count}`,
     `Durum: ${STATUS_TR[r.status] ?? r.status}`,
+    ...TRANSFER_LEGS.filter((leg) => r.transfer?.[leg]).map((leg) => {
+      const l = r.transfer![leg]!;
+      return `${leg === "arrival" ? "Geliş transferi" : "Dönüş transferi"}: ${l.airport} · ${formatTransferTime(l.at, "tr")}${l.flight ? ` · ${l.flight}` : ""}`;
+    }),
   ].join("\n");
 }
 
@@ -64,5 +70,39 @@ export async function notifyStatusChange(id: string): Promise<void> {
     recipients,
     `Rezervasyon ${STATUS_TR[r.status]?.toLowerCase() ?? r.status}: ${r.reference} · ${r.hotel_name}`,
     `Rezervasyon talebinizin durumu güncellendi.\n\n${summary(r)}\n\n${appUrl(`/klinik/rezervasyonlar/${r.id}`)}`,
+  );
+}
+
+const CHANGE_TR: Record<string, string> = {
+  CANCEL: "İptal talebi",
+  CHANGE: "Değişiklik talebi",
+  WITHDRAWN: "Talep geri çekildi",
+};
+
+/** Klinik iptal / değişiklik istedi ya da bekleyen talebini geri çekti: yöneticilere bildirim. Mesaj metni e-postaya konmaz. */
+export async function notifyChangeRequest(id: string, kind: "CANCEL" | "CHANGE" | "WITHDRAWN"): Promise<void> {
+  const r = await loadReservation(id);
+  if (!r) return;
+  await sendEmail(
+    adminNotificationEmails(),
+    `${CHANGE_TR[kind]}: ${r.reference} · ${r.hotel_name}`,
+    `${CHANGE_TR[kind]} (${r.clinics?.name ?? ""}).\n\n${summary(r)}\n\n${appUrl(`/admin/rezervasyonlar/${r.id}`)}`,
+  );
+}
+
+/** Admin değişiklik talebini kapattı: talebi oluşturan klinik kullanıcısına bildirim. */
+export async function notifyChangeResolved(requestId: string): Promise<void> {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return;
+  const admin = createAdminClient();
+  const { data: request } = await admin.from("reservation_change_requests").select("reservation_id, created_by").eq("id", requestId).maybeSingle();
+  if (!request) return;
+  const r = await loadReservation(request.reservation_id);
+  if (!r) return;
+  const { data: creator } = request.created_by ? await admin.auth.admin.getUserById(request.created_by) : { data: null };
+  const recipients = [...new Set([creator?.user?.email, r.clinics?.contact_email].filter((e): e is string => Boolean(e)))];
+  await sendEmail(
+    recipients,
+    `Talebiniz sonuçlandı: ${r.reference} · ${r.hotel_name}`,
+    `Rezervasyonunuz için gönderdiğiniz değişiklik talebi sonuçlandı.\n\n${summary(r)}\n\n${appUrl(`/klinik/rezervasyonlar/${r.id}`)}`,
   );
 }

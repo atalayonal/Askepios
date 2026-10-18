@@ -5,7 +5,7 @@ import { after } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary } from "@/i18n/server";
-import { notifyStatusChange } from "@/lib/notifications/reservations";
+import { notifyChangeResolved, notifyStatusChange } from "@/lib/notifications/reservations";
 
 export type FormState = { error?: string; message?: string };
 
@@ -23,7 +23,13 @@ export async function changeStatus(reservationId: string, _prev: FormState, fd: 
     p_new_status: status,
     p_note: String(fd.get("note") ?? ""),
   });
-  if (error) return { error: t.common.unexpectedError };
+  if (error) return { error: error.message === "no_rooms_left" ? t.allotment.noRoomsLeft : t.common.unexpectedError };
+
+  // Onaylarken girilen otel onay numarası belgeye yazılır.
+  const confirmationNo = String(fd.get("hotel_confirmation_no") ?? "").trim();
+  if (status === "CONFIRMED" && confirmationNo) {
+    await supabase.rpc("set_hotel_confirmation_no", { p_reservation_id: reservationId, p_value: confirmationNo });
+  }
 
   after(() => notifyStatusChange(reservationId));
   revalidatePath(`/admin/rezervasyonlar/${reservationId}`);
@@ -44,4 +50,31 @@ export async function addInternalNote(reservationId: string, _prev: FormState, f
 
   revalidatePath(`/admin/rezervasyonlar/${reservationId}`);
   return { message: t.common.saved };
+}
+
+export async function setHotelConfirmationNo(reservationId: string, _prev: FormState, fd: FormData): Promise<FormState> {
+  await requireAdmin();
+  const t = await getDictionary();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_hotel_confirmation_no", {
+    p_reservation_id: reservationId,
+    p_value: String(fd.get("hotel_confirmation_no") ?? ""),
+  });
+  if (error) return { error: t.common.unexpectedError };
+
+  revalidatePath(`/admin/rezervasyonlar/${reservationId}`);
+  return { message: t.common.saved };
+}
+
+export async function resolveChangeRequest(requestId: string, reservationId: string, _prev: FormState, fd: FormData): Promise<FormState> {
+  await requireAdmin();
+  const t = await getDictionary();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("resolve_change_request", { p_request_id: requestId, p_note: String(fd.get("note") ?? "") });
+  if (error) return { error: t.common.unexpectedError };
+
+  after(() => notifyChangeResolved(requestId));
+  revalidatePath(`/admin/rezervasyonlar/${reservationId}`);
+  revalidatePath("/admin");
+  return { message: t.changes.resolved };
 }

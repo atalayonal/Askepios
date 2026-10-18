@@ -18,7 +18,7 @@ export default async function AvailabilityPage({ searchParams }: PageProps<"/adm
   const supabase = await createClient();
   let roomsQuery = supabase
     .from("room_types")
-    .select("id, name_tr, hotel_id, hotels!inner(name, is_active)")
+    .select("id, name_tr, hotel_id, room_count, hotels!inner(name, is_active)")
     .eq("is_active", true)
     .eq("hotels.is_active", true);
   if (hotelFilter) roomsQuery = roomsQuery.eq("hotel_id", hotelFilter);
@@ -52,7 +52,7 @@ export default async function AvailabilityPage({ searchParams }: PageProps<"/adm
         const lastNight = addDays(r.check_out, -1);
         for (const day of eachDay(from, lastNight > last ? last : lastNight)) target[day] = (target[day] ?? 0) + 1;
       }
-      return { roomId: room.id, hotelName: hotel.name, roomName: room.name_tr, closed: [...closed], pending, confirmed };
+      return { roomId: room.id, hotelName: hotel.name, roomName: room.name_tr, capacity: room.room_count, closed: [...closed], pending, confirmed };
     })
     .sort((a, b) => a.hotelName.localeCompare(b.hotelName, "tr") || a.roomName.localeCompare(b.roomName, "tr"));
 
@@ -96,7 +96,7 @@ export default async function AvailabilityPage({ searchParams }: PageProps<"/adm
       </div>
 
       {rows.length ? (
-        <AvailabilityGrid days={days} rows={rows} weekdayLabels={weekdayLabels} t={t.availability} errorText={t.common.unexpectedError} />
+        <AvailabilityGrid days={days} rows={rows} weekdayLabels={weekdayLabels} t={t.availability} allotment={t.allotment} errorText={t.common.unexpectedError} />
       ) : (
         <p className="text-sm text-muted">{t.availability.noRooms}</p>
       )}

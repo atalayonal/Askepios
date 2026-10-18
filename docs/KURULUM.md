@@ -39,6 +39,7 @@ Diğer yöneticiler aynı şekilde eklenir. Klinik kullanıcıları ise uygulama
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secret** anahtar (eski adıyla `service_role`). Gizlidir; başka hiçbir yere yazmayın. |
 | `ASKEPIOS_CONTACT_EMAIL` | Kliniklerin yazacağı Asklepios e-postası |
 | `ASKEPIOS_CONTACT_WHATSAPP` | Asklepios WhatsApp numarası, ülke koduyla sadece rakam (`905xxxxxxxxx`) |
+| `ASKEPIOS_LEGAL_NAME` | KVKK aydınlatma metninde veri sorumlusu olarak yazacak şirket unvanı (ör. `Asklepios Sağlık Turizmi Ltd. Şti.`) |
 
 3. **Deploy**. Birkaç dakika sonra `askepios-xxxx.vercel.app` gibi bir adres verilir.
 4. Supabase → **Authentication → URL Configuration** → **Site URL** alanına bu adresi yazın.
@@ -66,6 +67,16 @@ adresidir; e-posta kurulmamış olsa da tanımlanmalıdır, yoksa bağlantılar 
   ayarı gerekmez.
 - Bağlantının geçerlilik süresi Supabase → **Authentication → Sign In / Providers → Email → Email OTP Expiration**
   ayarıdır (varsayılan 1 saat). Bağlantıyı WhatsApp'tan ileteceksiniz bunu **86400** (24 saat) yapmanız önerilir.
+
+## 6. KVKK ve kimlik bilgileri
+
+- Klinik, talep gönderirken misafirlere aydınlatma metnini ilettiğini işaretlemek zorundadır. Metin `/kvkk` adresindedir
+  (`src/app/kvkk/page.tsx`). Bu bir taslaktır; canlıya çıkmadan önce bir hukukçuya kontrol ettirin.
+- T.C. Kimlik No / pasaport no, doğum tarihi ve cinsiyet konaklamadan (ya da ret/iptalden) 30 gün sonra silinir.
+  Silme işini Supabase'in **pg_cron** eklentisi her gece yapar; migration eklentiyi açar ve işi kurar.
+  Kontrol: Supabase → **Integrations → Cron** altında `purge-guest-identity` görünmelidir.
+- Supabase bölgesi Frankfurt'tur (yurt dışı). Aydınlatma metni bunu genel olarak belirtir; hukukçunuz KVKK m.9
+  kapsamında ek bir işlem gerekip gerekmediğini değerlendirmelidir.
 
 ## Şema değişince
 
