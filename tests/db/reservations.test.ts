@@ -622,3 +622,41 @@ describe("otel onay numarası", () => {
     expect(rows[0].hotel_confirmation_no).toBe("HTL-778");
   });
 });
+
+describe("havalimanı transferi", () => {
+  const withTransfer = (transfer: unknown) =>
+    asUser(db, ids.userA, async () => {
+      const { rows } = await db.query("select public.create_reservation_request($1, '2030-10-28', '2030-10-29', $2, p_consent => true, p_transfer => $3) as id", [
+        ids.room,
+        JSON.stringify([guest()]),
+        JSON.stringify(transfer),
+      ]);
+      return rows[0].id as string;
+    });
+
+  it("geliş ve dönüş transferi kaydedilir; bilinmeyen alanlar atılır", async () => {
+    const id = await withTransfer({
+      arrival: { airport: "IST", at: "2030-10-28T14:30", flight: "TK1234", extra: "x" },
+      departure: { airport: "SAW", at: "2030-10-29T18:00" },
+    });
+    const { rows } = await db.query("select transfer from reservations where id = $1", [id]);
+    expect(rows[0].transfer).toEqual({
+      arrival: { airport: "IST", at: "2030-10-28T14:30", flight: "TK1234" },
+      departure: { airport: "SAW", at: "2030-10-29T18:00", flight: "" },
+    });
+  });
+
+  it("transfer istenmezse boş kalır", async () => {
+    const id = await request(ids.userA, ids.room, "2030-10-29", "2030-10-30");
+    const { rows } = await db.query("select transfer from reservations where id = $1", [id]);
+    expect(rows[0].transfer).toEqual({});
+  });
+
+  it("havalimanı ve uçuş saati zorunlu, uçuş no biçimi denetlenir", async () => {
+    await expect(withTransfer({ arrival: { at: "2030-10-28T14:30" } })).rejects.toThrow("transfer_airport_required");
+    await expect(withTransfer({ arrival: { airport: "IST", at: "" } })).rejects.toThrow("transfer_time_required");
+    await expect(withTransfer({ arrival: { airport: "IST", at: "2030-13-40T99:00" } })).rejects.toThrow("transfer_time_required");
+    await expect(withTransfer({ arrival: { airport: "IST", at: "2030-10-28T14:30", flight: "tk-1" } })).rejects.toThrow("invalid_flight_no");
+    await expect(withTransfer({ hotel: {} })).rejects.toThrow("invalid_transfer");
+  });
+});

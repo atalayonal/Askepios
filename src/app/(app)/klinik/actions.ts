@@ -7,6 +7,7 @@ import { requireClinicUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary } from "@/i18n/server";
 import { notifyChangeRequest, notifyNewReservation } from "@/lib/notifications/reservations";
+import { transferFromForm } from "@/lib/transfer";
 
 export type Quote =
   | { ok: true; nights: { night: string; price: number }[]; total: number; currency: string }
@@ -53,6 +54,7 @@ export async function createReservation(_prev: RequestState, fd: FormData): Prom
     p_guests: guests,
     p_notes: String(fd.get("notes") ?? ""),
     p_consent: fd.get("consent") === "1",
+    p_transfer: transferFromForm(fd),
   });
   if (error) return { error: t.clinic.errors[error.message] ?? t.common.unexpectedError };
 

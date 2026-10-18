@@ -150,6 +150,7 @@ export default async function ClinicHotelPage({ params, searchParams }: PageProp
                     initialRoomId={selectedRoom}
                     t={t.clinic}
                     kvkk={t.kvkk}
+                    transfer={t.transfer}
                     locale={locale}
                     today={today}
                   />

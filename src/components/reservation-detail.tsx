@@ -5,6 +5,8 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { ReservationStatus } from "./reservation-status";
 import { nightsBetween } from "@/lib/summary";
 import { countryName } from "@/lib/countries";
+import type { Transfer } from "@/lib/transfer";
+import { TransferSummary } from "./transfer-summary";
 
 type Reservation = {
   reference: string;
@@ -20,6 +22,7 @@ type Reservation = {
   status: string;
   created_at: string;
   hotel_confirmation_no?: string;
+  transfer?: Transfer | null;
 };
 type Guest = {
   position: number;
@@ -126,6 +129,8 @@ export function ReservationDetail({
           </ul>
           {guests.some((g) => g.identity_purged_at) && <p className="mt-2 text-xs text-muted">{t.kvkk.purgedNote}</p>}
         </div>
+
+        <TransferSummary transfer={r.transfer} t={t} locale={locale} />
 
         {r.clinic_notes && (
           <div>

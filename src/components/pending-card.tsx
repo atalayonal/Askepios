@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { CalendarDays, Hotel, Users } from "lucide-react";
+import { CalendarDays, Hotel, Plane, Users } from "lucide-react";
 import type { Dictionary, Locale } from "@/i18n/dictionaries";
 import { formatDate, formatMoney } from "@/lib/format";
 import { nightsBetween } from "@/lib/summary";
 import { mainGuestLabel, type GuestRow } from "@/lib/reservation-guests";
+import { TRANSFER_LEGS, type Transfer } from "@/lib/transfer";
 import { QuickDecision } from "./decision";
 
 export type PendingItem = {
@@ -19,6 +20,7 @@ export type PendingItem = {
   created_at: string;
   clinic_name?: string;
   reservation_guests?: GuestRow[] | null;
+  transfer?: Transfer | null;
 };
 
 /** Admin panelinde karar bekleyen talep kartı: bilgiler ve doğrudan Onayla / Reddet. */
@@ -46,6 +48,15 @@ export function PendingCard({ r, t, locale }: { r: PendingItem; t: Dictionary; l
             <Users aria-hidden className="h-4 w-4 text-muted" />
             {r.guest_count} {t.clinic.guests}
           </li>
+          {TRANSFER_LEGS.some((leg) => r.transfer?.[leg]) && (
+            <li className="flex items-center gap-1.5">
+              <Plane aria-hidden className="h-4 w-4 text-muted" />
+              {TRANSFER_LEGS.filter((leg) => r.transfer?.[leg])
+                .map((leg) => (leg === "arrival" ? t.transfer.arrivalShort : t.transfer.departureShort))
+                .join(" + ")}{" "}
+              {t.transfer.detailTitle.toLocaleLowerCase(locale === "tr" ? "tr-TR" : "en-GB")}
+            </li>
+          )}
         </ul>
       </div>
       <div className="text-lg font-extrabold md:text-right">{formatMoney(Number(r.total_price), r.currency, locale)}</div>

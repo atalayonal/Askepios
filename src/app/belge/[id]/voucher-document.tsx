@@ -3,6 +3,8 @@ import type { Dictionary, Locale } from "@/i18n/dictionaries";
 import { formatDate } from "@/lib/format";
 import { nightsBetween } from "@/lib/summary";
 import { countryName } from "@/lib/countries";
+import type { Transfer } from "@/lib/transfer";
+import { TransferSummary } from "@/components/transfer-summary";
 
 export type Hotel = { address: string; district: string; city: string };
 
@@ -14,6 +16,7 @@ type VoucherReservation = {
   check_out: string;
   guest_count: number;
   hotel_confirmation_no: string;
+  transfer?: Transfer | null;
 };
 
 /** Onay belgesinin kendisi: fiyat ve kimlik numarası içermez. */
@@ -103,6 +106,8 @@ export function VoucherDocument({
           ))}
         </ol>
       </section>
+
+      <TransferSummary transfer={r.transfer} t={t} locale={locale} />
 
       <footer className="space-y-1 border-t border-line pt-4 text-sm text-foreground/80">
         {clinicName && (

@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import type { Dictionary, Locale } from "@/i18n/dictionaries";
 import { createReservation, quote, type Quote, type RequestState } from "../../actions";
 import { GuestFields } from "./guest-fields";
+import { TransferFields } from "./transfer-fields";
 
 type Room = { id: string; name: string; maxOccupancy: number };
 
@@ -16,6 +17,7 @@ export function ReservationForm({
   initialRoomId,
   t,
   kvkk,
+  transfer,
   locale,
   today,
 }: {
@@ -23,6 +25,7 @@ export function ReservationForm({
   initialRoomId?: string;
   t: Dictionary["clinic"];
   kvkk: Dictionary["kvkk"];
+  transfer: Dictionary["transfer"];
   locale: Locale;
   today: string;
 }) {
@@ -161,6 +164,8 @@ export function ReservationForm({
           <GuestFields key={i} index={i} t={t} locale={locale} today={today} />
         ))}
       </div>
+
+      <TransferFields t={transfer} today={today} />
 
       <label className="block">
         <span className="text-sm font-medium">{t.notes}</span>

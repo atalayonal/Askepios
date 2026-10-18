@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { adminNotificationEmails, appUrl, sendEmail } from "./email";
+import { TRANSFER_LEGS, formatTransferTime, type Transfer } from "@/lib/transfer";
 
 const STATUS_TR: Record<string, string> = {
   PENDING: "Beklemede",
@@ -19,6 +20,7 @@ type ReservationSummary = {
   guest_count: number;
   status: string;
   created_by: string;
+  transfer: Transfer | null;
   clinics: { name: string; contact_email: string | null } | null;
 };
 
@@ -26,7 +28,7 @@ async function loadReservation(id: string): Promise<ReservationSummary | null> {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
   const { data } = await createAdminClient()
     .from("reservations")
-    .select("id, reference, hotel_name, room_name, check_in, check_out, guest_count, status, created_by, clinics(name, contact_email)")
+    .select("id, reference, hotel_name, room_name, check_in, check_out, guest_count, status, created_by, transfer, clinics(name, contact_email)")
     .eq("id", id)
     .maybeSingle();
   return data as unknown as ReservationSummary | null;
@@ -40,6 +42,10 @@ function summary(r: ReservationSummary): string {
     `Tarihler: ${r.check_in} → ${r.check_out}`,
     `Misafir sayısı: ${r.guest_count}`,
     `Durum: ${STATUS_TR[r.status] ?? r.status}`,
+    ...TRANSFER_LEGS.filter((leg) => r.transfer?.[leg]).map((leg) => {
+      const l = r.transfer![leg]!;
+      return `${leg === "arrival" ? "Geliş transferi" : "Dönüş transferi"}: ${l.airport} · ${formatTransferTime(l.at, "tr")}${l.flight ? ` · ${l.flight}` : ""}`;
+    }),
   ].join("\n");
 }
 

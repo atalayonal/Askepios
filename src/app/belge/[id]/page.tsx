@@ -25,7 +25,7 @@ export default async function VoucherPage({ params, searchParams }: PageProps<"/
   const { data: r } = await supabase
     .from("reservations")
     .select(
-      "id, reference, hotel_name, room_name, check_in, check_out, guest_count, status, hotel_confirmation_no, hotels(address, district, city), clinics(name)",
+      "id, reference, hotel_name, room_name, check_in, check_out, guest_count, status, hotel_confirmation_no, transfer, hotels(address, district, city), clinics(name)",
     )
     .eq("id", id)
     .maybeSingle();
