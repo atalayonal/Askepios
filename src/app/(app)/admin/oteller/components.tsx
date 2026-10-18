@@ -1,9 +1,20 @@
 import type { Dictionary, Locale } from "@/i18n/dictionaries";
 import { HOTEL_AMENITIES, ROOM_AMENITIES } from "@/lib/amenities";
 import { AmenityIcon } from "@/components/amenity-icon";
+import { setHotelActive } from "./actions";
 
 /** Özellik onay kutuları (Wi-Fi, otopark…). */
-function AmenityChecklist({ kind, selected, locale, legend }: { kind: "hotel" | "room"; selected?: string[]; locale: Locale; legend: string }) {
+function AmenityChecklist({
+  kind,
+  selected,
+  locale,
+  legend,
+}: {
+  kind: "hotel" | "room";
+  selected?: string[];
+  locale: Locale;
+  legend: string;
+}) {
   const labels: Record<string, { tr: string; en: string }> = kind === "hotel" ? HOTEL_AMENITIES : ROOM_AMENITIES;
   const chosen = new Set(selected ?? []);
   return (
@@ -11,7 +22,10 @@ function AmenityChecklist({ kind, selected, locale, legend }: { kind: "hotel" | 
       <legend className="text-sm font-medium">{legend}</legend>
       <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {Object.entries(labels).map(([key, label]) => (
-          <label key={key} className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm has-[:checked]:border-blue has-[:checked]:bg-sky">
+          <label
+            key={key}
+            className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm has-[:checked]:border-blue has-[:checked]:bg-sky"
+          >
             <input type="checkbox" name="amenities" value={key} defaultChecked={chosen.has(key)} className="accent-blue" />
             <AmenityIcon name={key} className="h-4 w-4 text-muted" />
             {label[locale]}
@@ -131,5 +145,55 @@ export function RoomFields({ t, locale, defaults }: { t: Dictionary; locale: Loc
       </label>
       <AmenityChecklist kind="room" selected={defaults?.amenities} locale={locale} legend={t.ui.roomAmenities} />
     </div>
+  );
+}
+
+export const CURRENCIES = ["EUR", "USD", "TRY", "GBP"] as const;
+
+export function CurrencySelect({ defaultValue = "EUR", className = "input mt-1" }: { defaultValue?: string; className?: string }) {
+  return (
+    <select name="currency" defaultValue={defaultValue} className={className}>
+      {CURRENCIES.map((c) => (
+        <option key={c}>{c}</option>
+      ))}
+    </select>
+  );
+}
+
+export type SetupStep = { done: boolean; label: string; href: string | null };
+
+/** Yeni ya da eksik bir otelde kalan kurulum adımları; hepsi tamamsa görünmez. Bağlantısız son adım oteli yayına alır. */
+export function SetupSteps({ hotelId, steps, t }: { hotelId: string; steps: SetupStep[]; t: Dictionary }) {
+  if (steps.every((step) => step.done)) return null;
+  return (
+    <section className="card border-blue/40 bg-sky/40 p-6">
+      <h2 className="font-semibold">{t.hotels.setupTitle}</h2>
+      <p className="mt-1 text-sm text-muted">{t.hotels.setupIntro}</p>
+      <ol className="mt-3 space-y-2 text-sm">
+        {steps.map((step, i) => (
+          <li key={i} className="flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${step.done ? "bg-success text-white" : "border border-line bg-white text-muted"}`}
+            >
+              {step.done ? "✓" : i + 1}
+            </span>
+            {step.href && !step.done ? (
+              <a href={step.href} className="text-blue hover:underline">
+                {step.label}
+              </a>
+            ) : (
+              <span className={step.done ? "text-muted line-through" : ""}>{step.label}</span>
+            )}
+            {!step.href && !step.done && (
+              <form action={setHotelActive.bind(null, hotelId, true)}>
+                <button type="submit" className="btn-primary px-3 py-1 text-xs">
+                  {t.common.activate}
+                </button>
+              </form>
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }

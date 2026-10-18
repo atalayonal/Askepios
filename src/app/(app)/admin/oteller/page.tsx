@@ -1,28 +1,28 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getDictionary, getLocale } from "@/i18n/server";
-import { ActionForm } from "@/components/action-form";
-import { SubmitButton } from "@/components/submit-button";
+import { getDictionary } from "@/i18n/server";
 import { StatusBadge } from "../klinikler/components";
-import { HotelFields } from "./components";
-import { createHotel } from "./actions";
 
 export default async function HotelsPage() {
   await requireAdmin();
   const t = await getDictionary();
-  const locale = await getLocale();
   const supabase = await createClient();
   const { data: hotels } = await supabase
     .from("hotels")
-    .select("id, name, city, district, stars, is_active, room_types(count), clinic_hotel_access(count)")
+    .select("id, name, city, district, stars, is_active, room_types(count), clinic_hotel_access(count), hotel_images(count)")
     .order("name");
 
   const count = (v: unknown) => (v as { count: number }[])[0]?.count ?? 0;
 
   return (
     <div className="space-y-6">
-      <h1 className="page-title">{t.hotels.title}</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="page-title">{t.hotels.title}</h1>
+        <Link href="/admin/oteller/yeni" className="btn-primary ml-auto">
+          + {t.hotels.addHotel}
+        </Link>
+      </div>
 
       <div className="card overflow-x-auto">
         <table className="table">
@@ -32,6 +32,7 @@ export default async function HotelsPage() {
               <th>{t.hotels.city}</th>
               <th>{t.hotels.stars}</th>
               <th>{t.hotels.roomCount}</th>
+              <th>{t.hotels.images}</th>
               <th>{t.hotels.partneredClinics}</th>
               <th>{t.common.status}</th>
             </tr>
@@ -47,6 +48,7 @@ export default async function HotelsPage() {
                 <td>{[h.district, h.city].filter(Boolean).join(", ")}</td>
                 <td>{h.stars ? "★".repeat(h.stars) : ""}</td>
                 <td>{count(h.room_types)}</td>
+                <td>{count(h.hotel_images)}</td>
                 <td>{count(h.clinic_hotel_access)}</td>
                 <td>
                   <StatusBadge active={h.is_active} labels={t.common} />
@@ -55,7 +57,7 @@ export default async function HotelsPage() {
             ))}
             {!hotels?.length && (
               <tr>
-                <td colSpan={6} className="text-muted">
+                <td colSpan={7} className="text-muted">
                   {t.common.none}
                 </td>
               </tr>
@@ -63,20 +65,6 @@ export default async function HotelsPage() {
           </tbody>
         </table>
       </div>
-
-      <details className="card max-w-3xl p-6">
-        <summary className="cursor-pointer font-semibold">{t.hotels.newHotel}</summary>
-        <ActionForm action={createHotel} className="mt-4 space-y-4">
-          <>
-            <>
-              <HotelFields t={t} locale={locale} />
-              <SubmitButton className="btn-primary">
-                {t.common.save}
-              </SubmitButton>
-            </>
-          </>
-        </ActionForm>
-      </details>
     </div>
   );
 }

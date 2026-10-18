@@ -36,53 +36,74 @@ export function ImageManager({
 }) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const uploading = progress !== null;
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  async function upload(files: FileList | null) {
-    if (!files?.length) return;
-    setUploading(true);
+  async function upload(files: FileList | File[] | null) {
+    const list = Array.from(files ?? []).filter((f) => f.type.startsWith("image/") || /\.(heic|heif)$/i.test(f.name));
+    if (!list.length || uploading) return;
+    setProgress({ done: 0, total: list.length });
     setError(null);
     const supabase = createClient();
-    try {
-      for (const file of Array.from(files)) {
+    const failed: string[] = [];
+    // Bir dosya bozuksa diğerleri yüklenmeye devam eder; sonunda başarısız olanlar listelenir.
+    for (const [index, file] of list.entries()) {
+      try {
         const blob = await shrink(file);
         const path = `hotels/${hotelId}/${roomTypeId ? `rooms/${roomTypeId}/` : ""}${crypto.randomUUID()}.webp`;
-        const { error: uploadError } = await supabase.storage
-          .from("hotel-images")
-          .upload(path, blob, { contentType: "image/webp" });
+        const { error: uploadError } = await supabase.storage.from("hotel-images").upload(path, blob, { contentType: "image/webp" });
         if (uploadError) throw uploadError;
         await registerImage(hotelId, roomTypeId, path);
+      } catch {
+        failed.push(file.name);
       }
-    } catch {
-      setError(t.uploadFailed);
-    } finally {
-      setUploading(false);
-      if (input.current) input.current.value = "";
-      router.refresh();
+      setProgress({ done: index + 1, total: list.length });
     }
+    if (failed.length) setError(`${t.uploadFailed} ${failed.join(", ")}`);
+    setProgress(null);
+    if (input.current) input.current.value = "";
+    router.refresh();
   }
 
   const run = (fn: () => Promise<void>) => startTransition(async () => fn());
 
   return (
     <div>
-      <div className="mb-3 flex items-center gap-3">
-        <label className="btn-secondary cursor-pointer">
-          {uploading ? t.uploading : t.uploadImages}
-          <input
-            ref={input}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            disabled={uploading}
-            className="sr-only"
-            onChange={(e) => upload(e.target.files)}
-          />
-        </label>
-        {error && <span className="text-sm text-red-700">{error}</span>}
-      </div>
+      <label
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          upload(e.dataTransfer.files);
+        }}
+        className={`mb-3 flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed px-4 py-6 text-center text-sm transition ${
+          dragging ? "border-blue bg-sky" : "border-line hover:border-blue hover:bg-sky/50"
+        }`}
+      >
+        <span className="font-medium text-blue">{uploading ? `${t.uploading} ${progress.done}/${progress.total}` : t.uploadImages}</span>
+        <span className="text-xs text-muted">{t.dropHint}</span>
+        <input
+          ref={input}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          disabled={uploading}
+          className="sr-only"
+          onChange={(e) => upload(e.target.files)}
+        />
+      </label>
+      {error && (
+        <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
+      )}
       {images.length === 0 ? (
         <p className="text-sm text-muted">{t.noImages}</p>
       ) : (
@@ -98,14 +119,31 @@ export function ImageManager({
               </div>
               <div className="flex flex-wrap gap-1 p-2 text-xs">
                 {!image.is_cover && (
-                  <button type="button" disabled={pending} onClick={() => run(() => setCoverImage(image.id))} className="btn-secondary px-2 py-1 text-xs">
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => run(() => setCoverImage(image.id))}
+                    className="btn-secondary px-2 py-1 text-xs"
+                  >
                     {t.makeCover}
                   </button>
                 )}
-                <button type="button" disabled={pending || index === 0} onClick={() => run(() => moveImage(image.id, -1))} className="btn-secondary px-2 py-1 text-xs" aria-label={t.moveUp}>
+                <button
+                  type="button"
+                  disabled={pending || index === 0}
+                  onClick={() => run(() => moveImage(image.id, -1))}
+                  className="btn-secondary px-2 py-1 text-xs"
+                  aria-label={t.moveUp}
+                >
                   ←
                 </button>
-                <button type="button" disabled={pending || index === images.length - 1} onClick={() => run(() => moveImage(image.id, 1))} className="btn-secondary px-2 py-1 text-xs" aria-label={t.moveDown}>
+                <button
+                  type="button"
+                  disabled={pending || index === images.length - 1}
+                  onClick={() => run(() => moveImage(image.id, 1))}
+                  className="btn-secondary px-2 py-1 text-xs"
+                  aria-label={t.moveDown}
+                >
                   →
                 </button>
                 <button
