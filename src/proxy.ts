@@ -4,8 +4,8 @@ import { NextResponse, type NextRequest } from "next/server";
 // Giriş yapmadan açılabilen sayfalar.
 const PUBLIC_PATHS = ["/giris", "/sifremi-unuttum"];
 // Oturum durumundan bağımsız açılan adresler.
-// Şifre bağlantısı, başka bir hesapla oturum açıkken de kullanılabilmeli.
-const ALWAYS_ALLOWED = ["/oturum-kapat", "/hesap-onayla"];
+// Şifre bağlantısı, başka bir hesapla oturum açıkken de kullanılabilmeli; KVKK metni herkese açık.
+const ALWAYS_ALLOWED = ["/oturum-kapat", "/hesap-onayla", "/kvkk"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

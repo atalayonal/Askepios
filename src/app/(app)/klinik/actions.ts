@@ -1,11 +1,12 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { requireClinicUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary } from "@/i18n/server";
-import { notifyNewReservation } from "@/lib/notifications/reservations";
+import { notifyChangeRequest, notifyNewReservation } from "@/lib/notifications/reservations";
 
 export type Quote =
   | { ok: true; nights: { night: string; price: number }[]; total: number; currency: string }
@@ -51,9 +52,46 @@ export async function createReservation(_prev: RequestState, fd: FormData): Prom
     p_check_out: String(fd.get("check_out") ?? ""),
     p_guests: guests,
     p_notes: String(fd.get("notes") ?? ""),
+    p_consent: fd.get("consent") === "1",
   });
   if (error) return { error: t.clinic.errors[error.message] ?? t.common.unexpectedError };
 
   after(() => notifyNewReservation(data as string));
   redirect(`/klinik/rezervasyonlar/${data}?yeni=1`);
+}
+
+export type ChangeState = { error?: string; message?: string };
+
+/** Klinik, henüz onaylanmamış talebini geri çeker. */
+export async function withdrawRequest(reservationId: string, _prev: ChangeState, fd: FormData): Promise<ChangeState> {
+  await requireClinicUser();
+  const t = await getDictionary();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("withdraw_reservation_request", {
+    p_reservation_id: reservationId,
+    p_note: String(fd.get("note") ?? ""),
+  });
+  if (error) return { error: t.changes.errors[error.message] ?? t.common.unexpectedError };
+
+  after(() => notifyChangeRequest(reservationId, "WITHDRAWN"));
+  revalidatePath(`/klinik/rezervasyonlar/${reservationId}`);
+  return { message: t.changes.withdrawn };
+}
+
+/** Klinik, rezervasyonu için iptal ya da değişiklik ister; Asklepios otelle görüşüp sonuçlandırır. */
+export async function requestChange(reservationId: string, _prev: ChangeState, fd: FormData): Promise<ChangeState> {
+  await requireClinicUser();
+  const t = await getDictionary();
+  const kind = fd.get("kind") === "CANCEL" ? "CANCEL" : "CHANGE";
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("request_reservation_change", {
+    p_reservation_id: reservationId,
+    p_kind: kind,
+    p_message: String(fd.get("message") ?? ""),
+  });
+  if (error) return { error: t.changes.errors[error.message] ?? t.common.unexpectedError };
+
+  after(() => notifyChangeRequest(reservationId, kind));
+  revalidatePath(`/klinik/rezervasyonlar/${reservationId}`);
+  return { message: t.changes.sent };
 }

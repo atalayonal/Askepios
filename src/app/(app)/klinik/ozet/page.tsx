@@ -1,3 +1,4 @@
+import { FileSpreadsheet } from "lucide-react";
 import { requireClinicUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary, getLocale } from "@/i18n/server";
@@ -23,8 +24,12 @@ export default async function ClinicSummaryPage({ searchParams }: PageProps<"/kl
             {user.clinicName} · {t.ui.summaryIntro}
           </p>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex flex-wrap items-center gap-3">
           <MonthPicker month={month} href={(m) => `/klinik/ozet?ay=${m}`} locale={locale} t={t} />
+          <a href={`/klinik/ozet/excel?ay=${month}`} className="btn-secondary" download>
+            <FileSpreadsheet aria-hidden className="h-4 w-4" />
+            {t.excel.export}
+          </a>
         </div>
       </div>
       <MonthlySummary rows={rows} t={t} locale={locale} admin={false} hrefBase="/klinik/rezervasyonlar" />

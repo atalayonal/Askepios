@@ -89,6 +89,7 @@ type RoomDefaults = {
   bed_info: string;
   max_occupancy: number;
   size_m2?: number | null;
+  room_count?: number | null;
   amenities?: string[];
 };
 
@@ -114,6 +115,11 @@ export function RoomFields({ t, locale, defaults }: { t: Dictionary; locale: Loc
       <label className="block">
         <span className="text-sm font-medium">{t.ui.roomSize}</span>
         <input name="size_m2" type="number" min={5} max={500} defaultValue={defaults?.size_m2 ?? ""} className="input mt-1" />
+      </label>
+      <label className="block sm:col-span-2">
+        <span className="text-sm font-medium">{t.allotment.roomCount}</span>
+        <input name="room_count" type="number" min={1} max={500} defaultValue={defaults?.room_count ?? ""} className="input mt-1 sm:w-40" />
+        <span className="mt-1 block text-xs text-muted">{t.allotment.roomCountHint}</span>
       </label>
       <label className="block sm:col-span-2">
         <span className="text-sm font-medium">{t.hotels.descriptionTr}</span>

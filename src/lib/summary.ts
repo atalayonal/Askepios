@@ -18,6 +18,8 @@ export type SummaryReservation = {
   total_price: number | string;
   currency: string;
   status: string;
+  hotel_confirmation_no?: string;
+  reservation_guests?: { full_name: string; position: number }[] | null;
 };
 
 export type Money = Record<string, number>;

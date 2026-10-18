@@ -9,6 +9,8 @@ export type GridRow = {
   roomId: string;
   hotelName: string;
   roomName: string;
+  /** Kontenjan; null ise takip edilmez. */
+  capacity: number | null;
   closed: string[];
   pending: Record<string, number>;
   confirmed: Record<string, number>;
@@ -21,12 +23,14 @@ export function AvailabilityGrid({
   rows,
   weekdayLabels,
   t,
+  allotment,
   errorText,
 }: {
   days: string[];
   rows: GridRow[];
   weekdayLabels: string[];
   t: Dictionary["availability"];
+  allotment: Dictionary["allotment"];
   errorText: string;
 }) {
   const router = useRouter();
@@ -108,17 +112,20 @@ export function AvailabilityGrid({
                   const selected = isSelected(r, d);
                   const p = row.pending[day] ?? 0;
                   const c = row.confirmed[day] ?? 0;
+                  // Kontenjanlı odada kalan oda sayısı gösterilir; bekleyen talepler de yer tutar.
+                  const left = row.capacity === null ? null : Math.max(row.capacity - c - p, 0);
+                  const full = !closed && left === 0;
                   return (
                     <td key={day} className="border-b border-line/70 p-0.5">
                       <button
                         type="button"
                         onClick={() => click({ row: r, day: d })}
-                        title={`${row.hotelName} · ${day} · ${closed ? t.closed : t.available}`}
+                        title={`${row.hotelName} · ${day} · ${closed ? t.closed : full ? allotment.full : t.available}${left !== null ? ` (${left}/${row.capacity})` : ""}`}
                         className={`relative flex h-8 w-8 items-center justify-center rounded ${
                           selected ? "ring-2 ring-blue" : ""
-                        } ${closed ? "bg-rose-100 text-rose-700" : "bg-emerald-50 hover:bg-emerald-100"}`}
+                        } ${closed ? "bg-rose-100 text-rose-700" : full ? "bg-amber-100 text-amber-800" : "bg-emerald-50 hover:bg-emerald-100"}`}
                       >
-                        {closed && "×"}
+                        {closed ? "×" : left !== null && <span className="text-[10px] font-semibold leading-none">{left}</span>}
                         {(p > 0 || c > 0) && (
                           <span className="absolute bottom-0.5 flex gap-0.5">
                             {c > 0 && <span className="h-1.5 w-1.5 rounded-full bg-blue" />}
@@ -142,6 +149,10 @@ export function AvailabilityGrid({
         <span className="flex items-center gap-1">
           <span className="h-3 w-3 rounded bg-rose-100" /> {t.closed}
         </span>
+        <span className="flex items-center gap-1">
+          <span className="h-3 w-3 rounded bg-amber-100" /> {allotment.full}
+        </span>
+        <span>{allotment.freeRoomsLegend}</span>
         <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-amber-500" /> {t.pendingLegend}
         </span>

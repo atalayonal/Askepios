@@ -22,7 +22,7 @@ const guest = (name = "Ayşe Yılmaz", extra: Record<string, string> = {}) => ({
 
 async function request(userId: string, roomId: string, checkIn: string, checkOut: string, guests = [guest()]) {
   return asUser(db, userId, async () => {
-    const { rows } = await db.query("select public.create_reservation_request($1, $2, $3, $4) as id", [
+    const { rows } = await db.query("select public.create_reservation_request($1, $2, $3, $4, p_consent => true) as id", [
       roomId,
       checkIn,
       checkOut,
@@ -493,5 +493,132 @@ describe("fiyat teklifi (quote_reservation)", () => {
 
   it("anlaşmasız otel için fiyat vermez", async () => {
     await expect(quote(ids.userA, ids.otherRoom, "2030-10-20", "2030-10-21", 1)).rejects.toThrow("hotel_not_partnered");
+  });
+});
+
+describe("KVKK", () => {
+  it("klinik aydınlatma/rıza onayını işaretlemeden talep gönderemez", async () => {
+    await expect(
+      asUser(db, ids.userA, () =>
+        db.query("select public.create_reservation_request($1, '2030-10-25', '2030-10-26', $2)", [ids.room, JSON.stringify([guest()])]),
+      ),
+    ).rejects.toThrow("consent_required");
+  });
+
+  it("onay zamanı kaydedilir", async () => {
+    const id = await request(ids.userA, ids.room, "2030-10-25", "2030-10-26");
+    const { rows } = await db.query("select guest_consent_at from reservations where id = $1", [id]);
+    expect(rows[0].guest_consent_at).toBeInstanceOf(Date);
+  });
+
+  it("konaklamadan 30 gün sonra kimlik bilgileri silinir, ad ve uyruk kalır; klinik silme fonksiyonunu çalıştıramaz", async () => {
+    const id = await request(ids.userA, ids.room, "2030-10-26", "2030-10-27");
+    await db.query("update reservations set check_in = current_date - 40, check_out = current_date - 35 where id = $1", [id]);
+    await expect(asUser(db, ids.userA, () => db.query("select public.purge_guest_identity(30)"))).rejects.toThrow(/permission denied/);
+
+    await db.query("select public.purge_guest_identity(30)");
+    const { rows } = await db.query("select full_name, nationality, id_number, birth_date, gender, identity_purged_at from reservation_guests where reservation_id = $1", [id]);
+    expect(rows[0]).toMatchObject({ full_name: "Ayşe Yılmaz", nationality: "TR", id_number: "", birth_date: null, gender: "" });
+    expect(rows[0].identity_purged_at).toBeInstanceOf(Date);
+  });
+
+  it("yaklaşan konaklamanın kimlik bilgileri silinmez", async () => {
+    const id = await request(ids.userA, ids.room, "2030-10-27", "2030-10-28");
+    await db.query("select public.purge_guest_identity(30)");
+    const { rows } = await db.query("select id_number from reservation_guests where reservation_id = $1", [id]);
+    expect(rows[0].id_number).not.toBe("");
+  });
+});
+
+describe("oda kontenjanı", () => {
+  let room: string;
+  const confirm = (id: string) => asUser(db, ids.admin, () => db.query("select public.change_reservation_status($1, 'CONFIRMED')", [id]));
+
+  beforeAll(async () => {
+    room = await insertReturningId(db, "insert into room_types (hotel_id, name_tr, room_count) values ($1, 'Kontenjanlı Oda', 2) returning id", [ids.partnered]);
+    await db.query("insert into room_rates (room_type_id, occupancy, price, valid_from, valid_to) values ($1, 1, 80, '2030-12-01', '2030-12-31')", [room]);
+  });
+
+  it("kontenjan dolunca (onaylı + bekleyen) yeni talep alınmaz; dolmayan gece etkilenmez", async () => {
+    await request(ids.userA, room, "2030-12-01", "2030-12-03");
+    await request(ids.userB, room, "2030-12-02", "2030-12-04");
+    await expect(request(ids.userA, room, "2030-12-02", "2030-12-03")).rejects.toThrow("room_unavailable");
+    await expect(request(ids.userA, room, "2030-12-01", "2030-12-02")).resolves.toBeTruthy();
+  });
+
+  it("onaylarken sadece onaylılar sayılır; kontenjan aşılacaksa onay reddedilir", async () => {
+    const a = await request(ids.userA, room, "2030-12-10", "2030-12-11");
+    const b = await request(ids.userA, room, "2030-12-10", "2030-12-11");
+    await db.query("update room_types set room_count = 1 where id = $1", [room]);
+    await confirm(a);
+    await expect(confirm(b)).rejects.toThrow("no_rooms_left");
+    await db.query("update room_types set room_count = 2 where id = $1", [room]);
+  });
+
+  it("iptal edilen rezervasyon yer açar", async () => {
+    const a = await request(ids.userA, room, "2030-12-20", "2030-12-21");
+    const b = await request(ids.userA, room, "2030-12-20", "2030-12-21");
+    await expect(request(ids.userA, room, "2030-12-20", "2030-12-21")).rejects.toThrow("room_unavailable");
+    await asUser(db, ids.admin, () => db.query("select public.change_reservation_status($1, 'REJECTED')", [b]));
+    await confirm(a);
+    await expect(request(ids.userA, room, "2030-12-20", "2030-12-21")).resolves.toBeTruthy();
+  });
+
+  it("kontenjanı boş oda tipinde sınır yok", async () => {
+    const { rows } = await db.query("select public.room_has_capacity($1, '2030-10-20', '2030-10-21', true) as ok", [ids.room]);
+    expect(rows[0].ok).toBe(true);
+  });
+});
+
+describe("iptal ve değişiklik talepleri", () => {
+  const call = (userId: string, sql: string, params: unknown[]) => asUser(db, userId, () => db.query(sql, params));
+
+  it("klinik kendi bekleyen talebini geri çeker; başkasınınkini çekemez", async () => {
+    const id = await request(ids.userA, ids.room, "2030-11-01", "2030-11-02");
+    await expect(call(ids.userB, "select public.withdraw_reservation_request($1)", [id])).rejects.toThrow("reservation_not_found");
+    await call(ids.userA, "select public.withdraw_reservation_request($1, 'Hasta vazgeçti')", [id]);
+    const { rows } = await db.query("select status from reservations where id = $1", [id]);
+    expect(rows[0].status).toBe("CANCELLED");
+  });
+
+  it("onaylı rezervasyonu klinik doğrudan iptal edemez, iptal talebi gönderir; admin iptal edince talep kapanır", async () => {
+    const id = await request(ids.userA, ids.room, "2030-11-02", "2030-11-03");
+    await call(ids.admin, "select public.change_reservation_status($1, 'CONFIRMED')", [id]);
+    await expect(call(ids.userA, "select public.withdraw_reservation_request($1)", [id])).rejects.toThrow("invalid_status_transition");
+
+    await call(ids.userA, "select public.request_reservation_change($1, 'CANCEL', 'Ameliyat ertelendi')", [id]);
+    await expect(call(ids.userA, "select public.request_reservation_change($1, 'CANCEL')", [id])).rejects.toThrow("change_request_open");
+
+    const seen = await call(ids.userA, "select kind, status from reservation_change_requests where reservation_id = $1", [id]);
+    expect(seen.rows).toEqual([{ kind: "CANCEL", status: "OPEN" }]);
+    const other = await call(ids.userB, "select 1 from reservation_change_requests where reservation_id = $1", [id]);
+    expect(other.rowCount).toBe(0);
+
+    await call(ids.admin, "select public.change_reservation_status($1, 'CANCELLED', 'Otel iptali onayladı')", [id]);
+    const { rows } = await db.query("select status, resolution_note from reservation_change_requests where reservation_id = $1", [id]);
+    expect(rows[0]).toEqual({ status: "RESOLVED", resolution_note: "Otel iptali onayladı" });
+  });
+
+  it("değişiklik talebinde açıklama zorunlu; admin kapatır, klinik kapatamaz ve doğrudan yazamaz", async () => {
+    const id = await request(ids.userA, ids.room, "2030-11-03", "2030-11-04");
+    await expect(call(ids.userA, "select public.request_reservation_change($1, 'CHANGE', '')", [id])).rejects.toThrow("change_message_required");
+    const { rows } = await call(ids.userA, "select public.request_reservation_change($1, 'CHANGE', 'Çıkış bir gün sonra olsun') as id", [id]);
+    await expect(call(ids.userA, "select public.resolve_change_request($1)", [rows[0].id])).rejects.toThrow("not_admin");
+    await expect(
+      call(ids.userA, "insert into reservation_change_requests (reservation_id, kind) values ($1, 'CANCEL')", [id]),
+    ).rejects.toThrow(/row-level security/);
+    await call(ids.admin, "select public.resolve_change_request($1, 'Otel tarihi uzattı')", [rows[0].id]);
+    const after = await db.query("select status from reservation_change_requests where id = $1", [rows[0].id]);
+    expect(after.rows[0].status).toBe("RESOLVED");
+  });
+});
+
+describe("otel onay numarası", () => {
+  it("sadece admin girer, klinik görür", async () => {
+    const id = await request(ids.userA, ids.room, "2030-11-05", "2030-11-06");
+    await expect(asUser(db, ids.userA, () => db.query("select public.set_hotel_confirmation_no($1, 'X1')", [id]))).rejects.toThrow("not_admin");
+    await asUser(db, ids.admin, () => db.query("select public.set_hotel_confirmation_no($1, ' HTL-778 ')", [id]));
+    const { rows } = await asUser(db, ids.userA, () => db.query("select hotel_confirmation_no from reservations where id = $1", [id]));
+    expect(rows[0].hotel_confirmation_no).toBe("HTL-778");
   });
 });

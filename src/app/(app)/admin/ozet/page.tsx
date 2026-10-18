@@ -1,3 +1,4 @@
+import { FileSpreadsheet } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary, getLocale } from "@/i18n/server";
@@ -44,6 +45,10 @@ export default async function AdminSummaryPage({ searchParams }: PageProps<"/adm
             </button>
           </form>
           <MonthPicker month={month} href={(m) => href(m)} locale={locale} t={t} />
+          <a href={`/admin/ozet/excel?ay=${month}${clinic ? `&klinik=${clinic}` : ""}`} className="btn-secondary" download>
+            <FileSpreadsheet aria-hidden className="h-4 w-4" />
+            {t.excel.export}
+          </a>
         </div>
       </div>
       <MonthlySummary rows={rows} t={t} locale={locale} admin hrefBase="/admin/rezervasyonlar" />

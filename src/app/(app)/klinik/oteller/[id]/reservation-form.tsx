@@ -15,12 +15,14 @@ export function ReservationForm({
   rooms,
   initialRoomId,
   t,
+  kvkk,
   locale,
   today,
 }: {
   rooms: Room[];
   initialRoomId?: string;
   t: Dictionary["clinic"];
+  kvkk: Dictionary["kvkk"];
   locale: Locale;
   today: string;
 }) {
@@ -163,6 +165,17 @@ export function ReservationForm({
       <label className="block">
         <span className="text-sm font-medium">{t.notes}</span>
         <textarea name="notes" rows={3} className="input mt-1" />
+      </label>
+
+      <label className="flex items-start gap-2 rounded-lg bg-background p-3 text-sm">
+        <input name="consent" type="checkbox" value="1" required data-label={kvkk.consentFieldLabel} className="mt-0.5 h-4 w-4 flex-none accent-blue" />
+        <span>
+          {kvkk.consentLabel}{" "}
+          <a href="/kvkk" target="_blank" className="font-semibold text-blue hover:underline">
+            {kvkk.readNotice}
+          </a>
+          <span className="mt-1 block text-xs text-muted">{kvkk.retentionNote}</span>
+        </span>
       </label>
 
       <button type="submit" disabled={submitting || !shownResult?.ok} className="btn-primary w-full py-3 text-base">

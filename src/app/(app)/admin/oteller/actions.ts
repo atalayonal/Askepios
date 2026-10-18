@@ -31,6 +31,7 @@ function hotelFields(fd: FormData) {
 function roomFields(fd: FormData) {
   const maxOccupancy = Number(text(fd, "max_occupancy"));
   const size = Number(text(fd, "size_m2"));
+  const roomCount = Number(text(fd, "room_count"));
   return {
     name_tr: text(fd, "name_tr"),
     name_en: text(fd, "name_en"),
@@ -39,6 +40,8 @@ function roomFields(fd: FormData) {
     bed_info: text(fd, "bed_info"),
     max_occupancy: Number.isInteger(maxOccupancy) && maxOccupancy >= 1 && maxOccupancy <= 10 ? maxOccupancy : 3,
     size_m2: Number.isInteger(size) && size >= 5 && size <= 500 ? size : null,
+    // Boş bırakılırsa kontenjan takip edilmez.
+    room_count: text(fd, "room_count") && Number.isInteger(roomCount) && roomCount >= 1 && roomCount <= 500 ? roomCount : null,
     amenities: cleanAmenities(fd.getAll("amenities").map(String), "room"),
   };
 }

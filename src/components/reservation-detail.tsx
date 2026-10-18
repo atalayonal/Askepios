@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { FileText } from "lucide-react";
 import type { Dictionary, Locale } from "@/i18n/dictionaries";
 import { formatDate, formatMoney } from "@/lib/format";
 import { ReservationStatus } from "./reservation-status";
@@ -17,6 +19,7 @@ type Reservation = {
   clinic_notes: string;
   status: string;
   created_at: string;
+  hotel_confirmation_no?: string;
 };
 type Guest = {
   position: number;
@@ -26,6 +29,7 @@ type Guest = {
   id_number?: string;
   birth_date?: string | null;
   gender?: string;
+  identity_purged_at?: string | null;
 };
 type History = { id: number; from_status: string | null; to_status: string; note: string; changed_at: string; changed_by_name?: string };
 
@@ -36,6 +40,7 @@ export function ReservationDetail({
   t,
   locale,
   clinicName,
+  voucherHref,
 }: {
   reservation: Reservation;
   guests: Guest[];
@@ -43,6 +48,8 @@ export function ReservationDetail({
   t: Dictionary;
   locale: Locale;
   clinicName?: string;
+  /** Onaylı rezervasyonda onay belgesi bağlantısı. */
+  voucherHref?: string;
 }) {
   const dateTime = (iso: string) =>
     new Intl.DateTimeFormat(locale === "tr" ? "tr-TR" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Istanbul" }).format(new Date(iso));
@@ -53,6 +60,12 @@ export function ReservationDetail({
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="page-title">{r.reference}</h1>
           <ReservationStatus status={r.status} labels={t.status} />
+          {voucherHref && r.status === "CONFIRMED" && (
+            <Link href={voucherHref} className="btn-secondary ml-auto">
+              <FileText aria-hidden className="h-4 w-4" />
+              {t.voucher.open}
+            </Link>
+          )}
         </div>
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           {clinicName && (
@@ -77,6 +90,12 @@ export function ReservationDetail({
             <dt className="text-muted">{t.clinic.total}</dt>
             <dd className="font-medium">{formatMoney(Number(r.total_price), r.currency, locale)}</dd>
           </div>
+          {r.hotel_confirmation_no && (
+            <div>
+              <dt className="text-muted">{t.voucher.hotelConfirmationNo}</dt>
+              <dd className="font-medium">{r.hotel_confirmation_no}</dd>
+            </div>
+          )}
           <div>
             <dt className="text-muted">{t.clinic.createdAt}</dt>
             <dd className="font-medium">{dateTime(r.created_at)}</dd>
@@ -105,6 +124,7 @@ export function ReservationDetail({
               </li>
             ))}
           </ul>
+          {guests.some((g) => g.identity_purged_at) && <p className="mt-2 text-xs text-muted">{t.kvkk.purgedNote}</p>}
         </div>
 
         {r.clinic_notes && (
