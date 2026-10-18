@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import type { Dictionary, Locale } from "@/i18n/dictionaries";
 import { createReservation, quote, type Quote, type RequestState } from "../../actions";
 import { GuestFields } from "./guest-fields";
@@ -36,6 +36,10 @@ export function ReservationForm({
   const [guestCount, setGuestCount] = useState(1);
   const [result, setResult] = useState<Quote | null>(null);
   const [missing, setMissing] = useState<string[]>([]);
+  const [blocker, setBlocker] = useState("");
+  const [attempted, setAttempted] = useState(false);
+  const quoteRef = useRef<HTMLDivElement>(null);
+  const alertRef = useRef<HTMLDivElement>(null);
 
   const room = rooms.find((r) => r.id === roomId);
   const maxGuests = room?.maxOccupancy ?? 1;
@@ -56,41 +60,38 @@ export function ReservationForm({
 
   const shownResult = ready ? result : null;
 
+  // Sunucudan hata dönerse uyarı görünür hale getirilir.
+  useEffect(() => {
+    if (state.error) alertRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [state]);
+
   return (
     <form
       action={action}
       noValidate
       className="space-y-4"
+      data-attempted={attempted || undefined}
       onSubmit={(e) => {
-        // Eksik ya da hatalı alanlar formun üstünde listelenir ve ilk alana gidilir.
+        // Eksik ya da hatalı alanlar kırmızıyla işaretlenir, düğmenin üstünde listelenir ve ilk alana gidilir.
+        setAttempted(true);
         const invalid = [...e.currentTarget.elements].filter(
           (el): el is HTMLInputElement => "validity" in el && !(el as HTMLInputElement).validity.valid,
         );
+        setMissing([...new Set(invalid.map((el) => el.dataset.label ?? el.name).filter(Boolean))]);
+        // Tarihler tamamsa ama müsaitlik/fiyat uygun değilse ya da henüz hesaplanmadıysa talep gönderilmez.
+        const quoteProblem = !ready || shownResult?.ok ? "" : shownResult ? (t.errors[shownResult.reason] ?? shownResult.reason) : t.quotePending;
+        setBlocker(quoteProblem);
         if (invalid.length) {
           e.preventDefault();
-          setMissing([...new Set(invalid.map((el) => el.dataset.label ?? el.name).filter(Boolean))]);
           invalid[0].focus();
           invalid[0].reportValidity();
-        } else {
-          setMissing([]);
+        } else if (quoteProblem) {
+          e.preventDefault();
+          quoteRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          quoteRef.current?.focus();
         }
       }}
     >
-      {missing.length > 0 && (
-        <div role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          <p className="font-semibold">{t.missingFields}</p>
-          <ul className="mt-1 list-disc pl-5">
-            {missing.map((m) => (
-              <li key={m}>{m}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {state.error && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {state.error}
-        </p>
-      )}
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block sm:col-span-2">
           <span className="text-sm font-medium">{t.room}</span>
@@ -140,7 +141,14 @@ export function ReservationForm({
       </div>
 
       {shownResult && (
-        <div className={`rounded-lg px-4 py-3 text-sm ${shownResult.ok ? "bg-success-soft text-success" : "bg-amber-soft text-foreground"}`} aria-live="polite">
+        <div
+          ref={quoteRef}
+          tabIndex={-1}
+          className={`rounded-lg px-4 py-3 text-sm outline-none ${
+            shownResult.ok ? "bg-success-soft text-success" : blocker ? "bg-red-50 font-medium text-red-700 ring-2 ring-red-300" : "bg-amber-soft text-foreground"
+          }`}
+          aria-live="polite"
+        >
           {shownResult.ok ? (
             <>
               <p className="font-medium">{t.available}</p>
@@ -165,7 +173,7 @@ export function ReservationForm({
         ))}
       </div>
 
-      <TransferFields t={transfer} today={today} />
+      <TransferFields t={transfer} today={today} checkIn={checkIn} checkOut={checkOut} />
 
       <label className="block">
         <span className="text-sm font-medium">{t.notes}</span>
@@ -183,7 +191,20 @@ export function ReservationForm({
         </span>
       </label>
 
-      <button type="submit" disabled={submitting || !shownResult?.ok} className="btn-primary w-full py-3 text-base">
+      {(missing.length > 0 || blocker || state.error) && (
+        <div ref={alertRef} role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="font-semibold">{t.notSent}</p>
+          <ul className="mt-1 list-disc pl-5">
+            {missing.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+            {blocker && <li>{blocker}</li>}
+            {state.error && <li>{state.error}</li>}
+          </ul>
+        </div>
+      )}
+
+      <button type="submit" disabled={submitting} className="btn-primary w-full py-3 text-base">
         {t.submit}
       </button>
     </form>
