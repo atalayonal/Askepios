@@ -13,7 +13,7 @@ export function transferFromForm(fd: FormData): Transfer {
     if (fd.get(`transfer_${leg}`) !== "1") continue;
     transfer[leg] = {
       airport: String(fd.get(`transfer_${leg}_airport`) ?? "").trim(),
-      at: String(fd.get(`transfer_${leg}_at`) ?? "").trim(),
+      at: [fd.get(`transfer_${leg}_date`), fd.get(`transfer_${leg}_time`)].map((v) => String(v ?? "").trim()).join("T"),
       flight: String(fd.get(`transfer_${leg}_flight`) ?? "")
         .replace(/[\s-]/g, "")
         .toUpperCase(),

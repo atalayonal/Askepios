@@ -4,8 +4,11 @@ import { useState } from "react";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { AIRPORTS, TRANSFER_LEGS } from "@/lib/transfer";
 
-/** Talebe isteğe bağlı geliş / dönüş transferi. İşaretlenen yönün havalimanı ve uçuş saati zorunludur. */
-export function TransferFields({ t, today }: { t: Dictionary["transfer"]; today: string }) {
+/**
+ * Talebe isteğe bağlı geliş / dönüş transferi. İşaretlenen yönün havalimanı ve uçuş tarihi/saati zorunludur.
+ * Tarih, giriş (geliş) ya da çıkış (dönüş) tarihiyle önceden doldurulur.
+ */
+export function TransferFields({ t, today, checkIn, checkOut }: { t: Dictionary["transfer"]; today: string; checkIn: string; checkOut: string }) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
   return (
@@ -29,7 +32,7 @@ export function TransferFields({ t, today }: { t: Dictionary["transfer"]; today:
               {label}
             </label>
             {open[leg] && (
-              <div className="grid gap-2 pl-6 sm:grid-cols-2">
+              <div className="grid gap-2 pl-6">
                 <label className="block">
                   <span className="text-xs font-medium">{t.airport} *</span>
                   <select name={`transfer_${leg}_airport`} required data-label={`${label}: ${t.airport}`} defaultValue="" className="input mt-1">
@@ -43,18 +46,32 @@ export function TransferFields({ t, today }: { t: Dictionary["transfer"]; today:
                     ))}
                   </select>
                 </label>
+                <fieldset>
+                  <legend className="text-xs font-medium">{timeLabel} *</legend>
+                  <div className="mt-1 grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-2">
+                    <input
+                      // Giriş/çıkış tarihi değişince önceden doldurulan tarih de güncellenir.
+                      key={leg === "arrival" ? checkIn : checkOut}
+                      name={`transfer_${leg}_date`}
+                      type="date"
+                      required
+                      min={today}
+                      defaultValue={leg === "arrival" ? checkIn : checkOut}
+                      aria-label={`${timeLabel}: ${t.date}`}
+                      data-label={`${label}: ${t.date}`}
+                      className="input"
+                    />
+                    <input
+                      name={`transfer_${leg}_time`}
+                      type="time"
+                      required
+                      aria-label={`${timeLabel}: ${t.time}`}
+                      data-label={`${label}: ${t.time}`}
+                      className="input"
+                    />
+                  </div>
+                </fieldset>
                 <label className="block">
-                  <span className="text-xs font-medium">{timeLabel} *</span>
-                  <input
-                    name={`transfer_${leg}_at`}
-                    type="datetime-local"
-                    required
-                    min={`${today}T00:00`}
-                    data-label={`${label}: ${timeLabel}`}
-                    className="input mt-1"
-                  />
-                </label>
-                <label className="block sm:col-span-2">
                   <span className="text-xs font-medium">{t.flight}</span>
                   <input
                     name={`transfer_${leg}_flight`}

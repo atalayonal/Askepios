@@ -85,6 +85,13 @@ body {
   .page-title {
     @apply text-2xl font-bold tracking-tight text-foreground;
   }
+  /* Gönderilmeye çalışılan formda eksik ya da hatalı alanlar kırmızı çerçeveyle gösterilir. */
+  form[data-attempted] .input:invalid {
+    @apply border-danger ring-2 ring-danger/20;
+  }
+  form[data-attempted] input[type="checkbox"]:invalid {
+    @apply outline-2 outline-offset-2 outline-danger;
+  }
   .back-link {
     @apply inline-flex items-center gap-1 text-sm font-medium text-blue hover:underline;
   }
