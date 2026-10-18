@@ -3,7 +3,7 @@ import "server-only";
 /**
  * Resend ile e-posta gönderir. RESEND_API_KEY ya da gönderen adresi tanımlı değilse sessizce atlar;
  * bildirim gönderilemese de rezervasyon işlemi başarılı sayılır.
- * Kişisel sağlık bilgisi ya da misafir detayı e-postaya konmaz.
+ * Misafir kimlik bilgisi e-postaya konmaz; iptal/değişiklik e-postasında sadece kliniğin yazdığı açıklama yöneticilere gider.
  * E-posta gerçekten gönderildiyse true döner.
  */
 export async function sendEmail(to: string[], subject: string, text: string): Promise<boolean> {

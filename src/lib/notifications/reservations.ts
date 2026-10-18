@@ -79,14 +79,19 @@ const CHANGE_TR: Record<string, string> = {
   WITHDRAWN: "Talep geri çekildi",
 };
 
-/** Klinik iptal / değişiklik istedi ya da bekleyen talebini geri çekti: yöneticilere bildirim. Mesaj metni e-postaya konmaz. */
-export async function notifyChangeRequest(id: string, kind: "CANCEL" | "CHANGE" | "WITHDRAWN"): Promise<void> {
+/**
+ * Klinik iptal / değişiklik istedi ya da bekleyen talebini geri çekti: yöneticilere bildirim.
+ * Kliniğin açıklaması (geri çekmede sebebi) e-postaya eklenir; sadece Asklepios yöneticilerine gider.
+ */
+export async function notifyChangeRequest(id: string, kind: "CANCEL" | "CHANGE" | "WITHDRAWN", message = ""): Promise<void> {
   const r = await loadReservation(id);
   if (!r) return;
+  const text = message.trim();
+  const label = kind === "WITHDRAWN" ? "Sebep" : "Kliniğin açıklaması";
   await sendEmail(
     adminNotificationEmails(),
     `${CHANGE_TR[kind]}: ${r.reference} · ${r.hotel_name}`,
-    `${CHANGE_TR[kind]} (${r.clinics?.name ?? ""}).\n\n${summary(r)}\n\n${appUrl(`/admin/rezervasyonlar/${r.id}`)}`,
+    `${CHANGE_TR[kind]} (${r.clinics?.name ?? ""}).\n\n${text ? `${label}:\n${text}\n\n` : ""}${summary(r)}\n\n${appUrl(`/admin/rezervasyonlar/${r.id}`)}`,
   );
 }
 
