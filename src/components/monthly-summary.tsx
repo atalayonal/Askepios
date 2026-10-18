@@ -68,7 +68,7 @@ function GroupTable({ title, groups, t, locale, firstColumn }: { title: string; 
       <h2 className="px-5 pb-3 pt-5 text-lg font-bold">{title}</h2>
       {groups.length ? (
         <div className="overflow-x-auto">
-          <table className="table">
+          <table className="table min-w-[34rem]">
             <thead>
               <tr>
                 <th>{firstColumn}</th>
@@ -125,7 +125,7 @@ export function MonthlySummary({
         <h2 className="px-5 pb-3 pt-5 text-lg font-bold">{t.ui.monthReservations}</h2>
         {list.length ? (
           <div className="overflow-x-auto">
-            <table className="table">
+            <table className="table min-w-[48rem]">
               <thead>
                 <tr>
                   <th>{t.clinic.reference}</th>
@@ -141,7 +141,7 @@ export function MonthlySummary({
                 {list.map((r) => (
                   <tr key={r.id} className={r.status === "REJECTED" || r.status === "CANCELLED" ? "text-muted" : ""}>
                     <td>
-                      <Link href={`${hrefBase}/${r.id}`} className="font-semibold text-blue hover:underline">
+                      <Link href={`${hrefBase}/${r.id}`} className="whitespace-nowrap font-semibold text-blue hover:underline">
                         {r.reference}
                       </Link>
                     </td>
