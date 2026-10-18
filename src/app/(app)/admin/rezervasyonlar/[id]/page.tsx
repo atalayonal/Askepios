@@ -21,7 +21,7 @@ export default async function AdminReservationPage({ params }: PageProps<"/admin
   if (!reservation) notFound();
 
   const [{ data: guests }, { data: history }, { data: notes }, { data: creator }] = await Promise.all([
-    supabase.from("reservation_guests").select("position, full_name, nationality, phone").eq("reservation_id", id).order("position"),
+    supabase.from("reservation_guests").select("position, full_name, nationality, phone, id_number, birth_date, gender").eq("reservation_id", id).order("position"),
     supabase
       .from("reservation_status_history")
       .select("id, from_status, to_status, note, changed_at, profiles(full_name)")

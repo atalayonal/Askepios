@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import type { Dictionary, Locale } from "@/i18n/dictionaries";
 import { createReservation, quote, type Quote, type RequestState } from "../../actions";
+import { GuestFields } from "./guest-fields";
 
 type Room = { id: string; name: string; maxOccupancy: number };
 
@@ -29,6 +30,7 @@ export function ReservationForm({
   const [checkOut, setCheckOut] = useState("");
   const [guestCount, setGuestCount] = useState(1);
   const [result, setResult] = useState<Quote | null>(null);
+  const [missing, setMissing] = useState<string[]>([]);
 
   const room = rooms.find((r) => r.id === roomId);
   const maxGuests = room?.maxOccupancy ?? 1;
@@ -50,7 +52,35 @@ export function ReservationForm({
   const shownResult = ready ? result : null;
 
   return (
-    <form action={action} className="space-y-4">
+    <form
+      action={action}
+      noValidate
+      className="space-y-4"
+      onSubmit={(e) => {
+        // Eksik ya da hatalı alanlar formun üstünde listelenir ve ilk alana gidilir.
+        const invalid = [...e.currentTarget.elements].filter(
+          (el): el is HTMLInputElement => "validity" in el && !(el as HTMLInputElement).validity.valid,
+        );
+        if (invalid.length) {
+          e.preventDefault();
+          setMissing([...new Set(invalid.map((el) => el.dataset.label ?? el.name).filter(Boolean))]);
+          invalid[0].focus();
+          invalid[0].reportValidity();
+        } else {
+          setMissing([]);
+        }
+      }}
+    >
+      {missing.length > 0 && (
+        <div role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="font-semibold">{t.missingFields}</p>
+          <ul className="mt-1 list-disc pl-5">
+            {missing.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {state.error && (
         <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
           {state.error}
@@ -77,7 +107,7 @@ export function ReservationForm({
         </label>
         <label className="block">
           <span className="text-sm font-medium">{t.checkIn}</span>
-          <input name="check_in" type="date" required min={today} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="input mt-1" />
+          <input name="check_in" type="date" required data-label={t.checkIn} min={today} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="input mt-1" />
         </label>
         <label className="block">
           <span className="text-sm font-medium">{t.checkOut}</span>
@@ -85,6 +115,7 @@ export function ReservationForm({
             name="check_out"
             type="date"
             required
+            data-label={t.checkOut}
             min={checkIn || today}
             value={checkOut}
             onChange={(e) => setCheckOut(e.target.value)}
@@ -122,29 +153,12 @@ export function ReservationForm({
         </div>
       )}
 
-      <fieldset className="space-y-3">
+      <div className="space-y-3">
+        <p className="text-sm text-muted">{t.guestInfoIntro}</p>
         {Array.from({ length: guestCount }, (_, i) => (
-          <div key={i} className="grid gap-2 rounded-lg border border-line p-3">
-            <legend className="sr-only">
-              {t.guest} {i + 1}
-            </legend>
-            <label className="block">
-              <span className="text-xs font-medium">
-                {t.guest} {i + 1} · {t.guestName}
-              </span>
-              <input name={`guest_${i}_name`} required className="input mt-1" />
-            </label>
-            <label className="block">
-              <span className="text-xs font-medium">{t.nationality}</span>
-              <input name={`guest_${i}_nationality`} className="input mt-1" />
-            </label>
-            <label className="block">
-              <span className="text-xs font-medium">{t.phone}</span>
-              <input name={`guest_${i}_phone`} type="tel" className="input mt-1" />
-            </label>
-          </div>
+          <GuestFields key={i} index={i} t={t} locale={locale} today={today} />
         ))}
-      </fieldset>
+      </div>
 
       <label className="block">
         <span className="text-sm font-medium">{t.notes}</span>

@@ -2,6 +2,7 @@ import type { Dictionary, Locale } from "@/i18n/dictionaries";
 import { formatDate, formatMoney } from "@/lib/format";
 import { ReservationStatus } from "./reservation-status";
 import { nightsBetween } from "@/lib/summary";
+import { countryName } from "@/lib/countries";
 
 type Reservation = {
   reference: string;
@@ -17,7 +18,15 @@ type Reservation = {
   status: string;
   created_at: string;
 };
-type Guest = { position: number; full_name: string; nationality: string; phone: string };
+type Guest = {
+  position: number;
+  full_name: string;
+  nationality: string;
+  phone: string;
+  id_number?: string;
+  birth_date?: string | null;
+  gender?: string;
+};
 type History = { id: number; from_status: string | null; to_status: string; note: string; changed_at: string; changed_by_name?: string };
 
 export function ReservationDetail({
@@ -78,9 +87,20 @@ export function ReservationDetail({
           <h2 className="mb-2 text-sm font-semibold">{t.clinic.guestCount}: {r.guest_count}</h2>
           <ul className="divide-y divide-line/70 rounded-md border border-line text-sm">
             {guests.map((g) => (
-              <li key={g.position} className="flex flex-wrap gap-x-4 px-3 py-2">
+              <li key={g.position} className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2">
                 <span className="font-medium">{g.full_name}</span>
-                {g.nationality && <span className="text-muted">{g.nationality}</span>}
+                {g.nationality && <span className="text-muted">{countryName(g.nationality, locale)}</span>}
+                {g.id_number && (
+                  <span className="text-muted">
+                    {g.nationality === "TR" ? t.clinic.tckn : t.clinic.passportNo}: <span className="font-mono text-foreground">{g.id_number}</span>
+                  </span>
+                )}
+                {g.birth_date && (
+                  <span className="text-muted">
+                    {t.clinic.birthDate}: {formatDate(g.birth_date, locale)}
+                  </span>
+                )}
+                {g.gender && <span className="text-muted">{g.gender === "F" ? t.clinic.female : t.clinic.male}</span>}
                 {g.phone && <span className="text-muted">{g.phone}</span>}
               </li>
             ))}

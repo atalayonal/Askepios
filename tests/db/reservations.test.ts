@@ -10,7 +10,15 @@ const ids = {} as Record<
   string
 >;
 
-const guest = (name = "Ayşe Yılmaz") => ({ full_name: name, nationality: "TR", phone: "+90 555 000 00 00" });
+const guest = (name = "Ayşe Yılmaz", extra: Record<string, string> = {}) => ({
+  full_name: name,
+  nationality: "TR",
+  id_number: "10000000146",
+  birth_date: "1985-04-12",
+  gender: "F",
+  phone: "+90 555 000 00 00",
+  ...extra,
+});
 
 async function request(userId: string, roomId: string, checkIn: string, checkOut: string, guests = [guest()]) {
   return asUser(db, userId, async () => {
@@ -102,6 +110,36 @@ describe("tarih ve misafir doğrulaması", () => {
 
   it("misafir adı zorunludur", async () => {
     await expect(request(ids.userA, ids.room, "2030-10-20", "2030-10-21", [guest(" ")])).rejects.toThrow("guest_name_required");
+  });
+});
+
+describe("misafir kimlik bilgileri", () => {
+  const tryGuest = (extra: Record<string, string>) =>
+    request(ids.userA, ids.room, "2030-10-25", "2030-10-26", [guest("Test Kişi", extra)]).then(
+      () => "ok",
+      (e: Error) => e.message,
+    );
+
+  it("T.C. vatandaşı için geçerli T.C. Kimlik No ister", async () => {
+    expect(await tryGuest({ id_number: "" })).toBe("guest_id_required");
+    expect(await tryGuest({ id_number: "12345678901" })).toBe("invalid_tckn");
+    expect(await tryGuest({ id_number: "1000000014" })).toBe("invalid_tckn");
+  });
+
+  it("yabancı misafir için pasaport no ister; uyruk, doğum tarihi ve cinsiyet zorunlu", async () => {
+    expect(await tryGuest({ nationality: "", id_number: "U1234567" })).toBe("guest_nationality_required");
+    expect(await tryGuest({ nationality: "DE", id_number: "12-3" })).toBe("invalid_passport");
+    expect(await tryGuest({ nationality: "DE", id_number: "C01X00T47", birth_date: "" })).toBe("invalid_birth_date");
+    expect(await tryGuest({ nationality: "DE", id_number: "C01X00T47", birth_date: "2999-01-01" })).toBe("invalid_birth_date");
+    expect(await tryGuest({ nationality: "DE", id_number: "C01X00T47", gender: "" })).toBe("guest_gender_required");
+  });
+
+  it("geçerli bilgiler kaydedilir; pasaport no büyük harfe çevrilir", async () => {
+    expect(await tryGuest({ nationality: "de", id_number: "c01x 00t47" })).toBe("ok");
+    const { rows } = await db.query(
+      "select nationality, id_number, birth_date::text, gender from reservation_guests where full_name = 'Test Kişi'",
+    );
+    expect(rows[0]).toEqual({ nationality: "DE", id_number: "C01X00T47", birth_date: "1985-04-12", gender: "F" });
   });
 });
 

@@ -38,6 +38,9 @@ export async function createReservation(_prev: RequestState, fd: FormData): Prom
   const guests = Array.from({ length: Number.isInteger(guestCount) && guestCount > 0 && guestCount <= 10 ? guestCount : 0 }, (_, i) => ({
     full_name: String(fd.get(`guest_${i}_name`) ?? "").trim(),
     nationality: String(fd.get(`guest_${i}_nationality`) ?? "").trim(),
+    id_number: String(fd.get(`guest_${i}_id_number`) ?? "").trim(),
+    birth_date: String(fd.get(`guest_${i}_birth_date`) ?? "").trim(),
+    gender: String(fd.get(`guest_${i}_gender`) ?? "").trim(),
     phone: String(fd.get(`guest_${i}_phone`) ?? "").trim(),
   }));
 
